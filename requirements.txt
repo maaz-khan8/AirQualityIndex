@@ -5,15 +5,12 @@ numpy==1.24.3
 # API and HTTP Requests
 requests==2.31.0
 
-# Hopsworks Feature Store (Python 3.13 NOT officially supported yet)
-# Latest version: 3.7.0 (may work with 3.13 but not guaranteed)
-# For guaranteed compatibility, use Python 3.12 or earlier
-hopsworks==3.7.0
+# Hopsworks Feature Store
+hopsworks==4.2.8
 
 # Machine Learning
 scikit-learn==1.3.0
-xgboost==2.0.3
-joblib==1.3.2
+joblib==1.5.2
 
 # Deep Learning (Optional - for advanced models)
 # tensorflow==2.13.0
