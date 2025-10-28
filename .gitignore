@@ -1,3 +1,13 @@
+.env
+__pycache__/
+*.pyc
+logs/
+reports/latest/*.png
+reports/latest/*.html
+reports/latest/eda_metadata.json
+validation/*.json
+alerts/*.json
+models/*.pkl
 # Python
 __pycache__/
 *.py[cod]

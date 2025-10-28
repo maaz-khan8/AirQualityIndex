@@ -28,6 +28,7 @@ seaborn>=0.12.0
 # Utilities
 python-dateutil>=2.8.0
 pytz>=2023.3
+python-dotenv>=1.0.0
 
 # Additional dependencies for CI
 scipy>=1.11.0

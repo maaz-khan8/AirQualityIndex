@@ -1,6 +1,15 @@
 import os
 from datetime import datetime, timedelta
 
+# Load local environment variables from .env for local/dev only
+# This will not override CI/CD secrets (override=False)
+try:
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv(override=False)
+except Exception:
+    # dotenv is optional; proceed if not installed (e.g., in CI)
+    pass
+
 # API Configuration
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY", "")
 HOPSWORKS_PROJECT_NAME = os.getenv("HOPSWORKS_PROJECT_NAME", "aqi_maazkhan")
