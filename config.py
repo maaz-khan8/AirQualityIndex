@@ -4,6 +4,10 @@ from datetime import datetime, timedelta
 # API Configuration
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY", "")
 HOPSWORKS_PROJECT_NAME = os.getenv("HOPSWORKS_PROJECT_NAME", "aqi_maazkhan")
+
+# Validate required environment variables
+if not HOPSWORKS_API_KEY:
+    raise ValueError("HOPSWORKS_API_KEY environment variable is required but not set")
 HOPSWORKS_FEATURE_GROUP_NAME = "london_air_quality_6h"
 HOPSWORKS_FEATURE_GROUP_VERSION = 1
 HOPSWORKS_FEATURE_VIEW_NAME = "london_air_quality_6h_view"
@@ -68,3 +72,7 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 LOGS_DIR = "logs"
 LOG_FILE = f"{LOGS_DIR}/aqi_project.log"
 PLOTS_DIR = "plots"
+
+# Ensure logs directory exists
+import os
+os.makedirs(LOGS_DIR, exist_ok=True)
