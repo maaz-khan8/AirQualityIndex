@@ -169,9 +169,13 @@ class HopsworksClient:
             
             model_obj.save(model)
             
-            if metrics:
-                for metric_name, metric_value in metrics.items():
-                    model_obj.save_metric(metric_name, metric_value)
+            # Some Hopsworks model objects don't expose save_metric; avoid hard failure
+            try:
+                if metrics and hasattr(model_obj, "save_metric"):
+                    for metric_name, metric_value in metrics.items():
+                        model_obj.save_metric(metric_name, metric_value)
+            except Exception:
+                logger.warning("Model metrics not saved (save_metric not available)")
             
             logger.info(f"Model saved to registry: {model_name}")
             return model_obj
@@ -216,3 +220,51 @@ class HopsworksClient:
         except Exception as e:
             logger.error(f"Failed to get feature data: {str(e)}")
             return None
+
+    def load_models(self):
+        """Load trained models for dashboard usage.
+        Primary source: local 'models' directory where pipeline saves .pkl files.
+        If not found, attempts to fetch latest from Hopsworks Model Registry.
+        Returns a dict of {model_name: loaded_model}.
+        """
+        try:
+            import os
+            import glob
+            import joblib
+            models = {}
+
+            # 1) Try local models first
+            local_dir = os.path.join(os.getcwd(), "models")
+            if os.path.isdir(local_dir):
+                for path in glob.glob(os.path.join(local_dir, "*_model.pkl")):
+                    name = os.path.basename(path).replace("_model.pkl", "")
+                    try:
+                        models[name] = joblib.load(path)
+                    except Exception:
+                        continue
+
+            # 2) If none loaded and connected, try Hopsworks registry
+            if not models and self.project is not None:
+                try:
+                    mr = self.project.get_model_registry()
+                    # Expect names saved by pipeline
+                    candidate_names = [
+                        f"{config.HOPSWORKS_MODEL_NAME}_random_forest",
+                        f"{config.HOPSWORKS_MODEL_NAME}_ridge_regression",
+                    ]
+                    for mname in candidate_names:
+                        try:
+                            model = mr.get_model(name=mname, version=None)  # latest
+                            model_dir = model.download()
+                            pkl_paths = glob.glob(os.path.join(model_dir, "**", "*.pkl"), recursive=True)
+                            if pkl_paths:
+                                models[mname] = joblib.load(pkl_paths[0])
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
+            return models
+        except Exception as e:
+            logger.error(f"Failed to load models: {str(e)}")
+            return {}

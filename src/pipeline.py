@@ -114,19 +114,28 @@ class UnifiedPipeline:
             # Step 5: Train models
             logger.info("Training models...")
             
-            # Prepare training data - only numeric features
+            # Prepare training data for 6h ahead target (avoid leakage)
+            # Use 'aqi_6h_ahead' as target and exclude non-lagged AQI-derived features
             numeric_features = df_features.select_dtypes(include=[np.number]).columns.tolist()
-            if 'aqi' in numeric_features:
-                numeric_features.remove('aqi')
+            # Exclude target and direct AQI columns; keep only lag-based AQI features
+            numeric_features = [
+                c for c in numeric_features
+                if c != 'aqi_6h_ahead' and c != 'aqi' and not (c.startswith('aqi_') and not c.startswith('aqi_lag_'))
+            ]
             
-            X = df_features[numeric_features]
-            y = df_features['aqi']
+            X_all = df_features[numeric_features]
+            y_all = df_features['aqi_6h_ahead']
+            
+            # Chronological split to avoid leakage
+            split_idx = int(len(X_all) * config.TRAIN_TEST_SPLIT)
+            X_train, X_test = X_all.iloc[:split_idx], X_all.iloc[split_idx:]
+            y_train, y_test = y_all.iloc[:split_idx], y_all.iloc[split_idx:]
             
             self.forecaster.train_from_dataframe(
-                X_train=X,
-                X_test=X,
-                y_train=y,
-                y_test=y
+                X_train=X_train,
+                X_test=X_test,
+                y_train=y_train,
+                y_test=y_test
             )
             
             # Step 6: Save models to Hopsworks
@@ -154,7 +163,24 @@ class UnifiedPipeline:
             logger.info("Training multi-horizon models...")
             horizon_data = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_features)
             if horizon_data:
-                self.multi_horizon_forecaster.train_multi_horizon_models(horizon_data)
+                horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(horizon_data)
+                # Save multi-horizon models locally and to Hopsworks
+                try:
+                    import joblib, os
+                    os.makedirs("models", exist_ok=True)
+                    for horizon, results in horizon_results.items():
+                        for name, result in results.items():
+                            model = result['model']
+                            model_path = f"models/h{horizon}_{name}_model.pkl"
+                            joblib.dump(model, model_path)
+                            self.client.save_model(
+                                model=model_path,
+                                model_name=f"{config.HOPSWORKS_MODEL_NAME}_h{horizon}_{name}",
+                                metrics=result['test_metrics'],
+                                description=f"{horizon}-hour AQI forecasting model using {name}"
+                            )
+                except Exception as e:
+                    logger.error(f"Failed to save multi-horizon models: {str(e)}")
             
             # Step 8: Run alerts and interpretability
             logger.info("Running alert system...")
@@ -230,20 +256,25 @@ class UnifiedPipeline:
             
             logger.info(f"Retraining with {len(df_updated)} total records")
             
-            # Retrain models
-            # Prepare training data - only numeric features
+            # Retrain models with chronological split and 6h ahead target
             numeric_features = df_updated.select_dtypes(include=[np.number]).columns.tolist()
-            if 'aqi' in numeric_features:
-                numeric_features.remove('aqi')
+            numeric_features = [
+                c for c in numeric_features
+                if c != 'aqi_6h_ahead' and c != 'aqi' and not (c.startswith('aqi_') and not c.startswith('aqi_lag_'))
+            ]
             
-            X = df_updated[numeric_features]
-            y = df_updated['aqi']
+            X_all = df_updated[numeric_features]
+            y_all = df_updated['aqi_6h_ahead']
+            
+            split_idx = int(len(X_all) * config.TRAIN_TEST_SPLIT)
+            X_train, X_test = X_all.iloc[:split_idx], X_all.iloc[split_idx:]
+            y_train, y_test = y_all.iloc[:split_idx], y_all.iloc[split_idx:]
             
             self.forecaster.train_from_dataframe(
-                X_train=X,
-                X_test=X,
-                y_train=y,
-                y_test=y
+                X_train=X_train,
+                X_test=X_test,
+                y_train=y_train,
+                y_test=y_test
             )
             
             # Save updated models
@@ -269,7 +300,23 @@ class UnifiedPipeline:
             # Retrain multi-horizon models
             horizon_data = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_updated)
             if horizon_data:
-                self.multi_horizon_forecaster.train_multi_horizon_models(horizon_data)
+                horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(horizon_data)
+                try:
+                    import joblib, os
+                    os.makedirs("models", exist_ok=True)
+                    for horizon, results in horizon_results.items():
+                        for name, result in results.items():
+                            model = result['model']
+                            model_path = f"models/h{horizon}_{name}_model.pkl"
+                            joblib.dump(model, model_path)
+                            self.client.save_model(
+                                model=model_path,
+                                model_name=f"{config.HOPSWORKS_MODEL_NAME}_h{horizon}_{name}",
+                                metrics=result['test_metrics'],
+                                description=f"{horizon}-hour AQI forecasting model using {name} (daily update)"
+                            )
+                except Exception as e:
+                    logger.error(f"Failed to save multi-horizon models: {str(e)}")
             
             # Step 6: Run alerts
             logger.info("Running alert system...")

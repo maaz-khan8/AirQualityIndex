@@ -28,18 +28,14 @@ def run_dashboard():
         import sys
         
         # Run dashboard
-        result = subprocess.run([
+        # Start dashboard without capturing output; let it run interactively
+        subprocess.Popen([
             sys.executable, "-m", "streamlit", "run", "src/dashboard.py",
             "--server.port", "8501",
             "--server.address", "localhost"
-        ], capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            logger.info("Dashboard started successfully")
-            return True
-        else:
-            logger.error(f"Dashboard failed: {result.stderr}")
-            return False
+        ])
+        logger.info("Dashboard process started at http://localhost:8501")
+        return True
             
     except Exception as e:
         logger.error(f"Dashboard failed: {str(e)}")

@@ -1,140 +1,30 @@
-name: AQI Model Retraining Monitor
+name: AQI Daily Update
 
 on:
   schedule:
-    # Check daily at 3 AM UTC (1 hour after Hopsworks job)
-    - cron: '0 3 * * *'
-  workflow_dispatch:
-    # Manual trigger
-    inputs:
-      check_type:
-        description: 'Type of check to perform'
-        required: true
-        default: 'full'
-        type: choice
-        options:
-        - full
-        - performance
-        - data_quality
+    - cron: '0 12 * * *'  # 12:00 UTC daily
+  workflow_dispatch: {}
 
 jobs:
-  monitor-retraining:
+  daily-update:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests pandas numpy
-        
-    - name: Check Hopsworks Job Status
-      env:
-        HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
-      run: |
-        python -c "
-        import requests
-        import json
-        from datetime import datetime, timedelta
-        
-        # Check if retraining job completed successfully
-        print('🔍 Checking Hopsworks Job Status...')
-        
-        # This would integrate with Hopsworks API to check job status
-        # For now, we'll simulate the check
-        print('✅ Hopsworks Job Status: COMPLETED')
-        print('📊 Last Execution: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        print('🎯 Next Execution: ' + (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'))
-        "
-        
-    - name: Check Model Performance
-      env:
-        HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
-      run: |
-        python -c "
-        print('📈 Checking Model Performance...')
-        
-        # This would check model performance metrics
-        print('✅ Model Performance: STABLE')
-        print('📊 R² Score: 0.516 (XGBoost)')
-        print('📊 MAE: 6.169 (XGBoost)')
-        print('📊 Model Version: Latest')
-        "
-        
-    - name: Check Data Quality
-      run: |
-        python -c "
-        print('🔍 Checking Data Quality...')
-        
-        # This would check data quality metrics
-        print('✅ Data Quality: GOOD')
-        print('📊 Missing Values: < 5%')
-        print('📊 Data Freshness: < 2 hours')
-        print('📊 API Status: HEALTHY')
-        "
-        
-    - name: Generate Status Report
-      run: |
-        echo "# AQI Model Retraining Status Report" > status_report.md
-        echo "" >> status_report.md
-        echo "## 📊 System Status" >> status_report.md
-        echo "- **Status**: ✅ HEALTHY" >> status_report.md
-        echo "- **Last Check**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> status_report.md
-        echo "- **Next Check**: $(date -u -d '+1 day' '+%Y-%m-%d %H:%M:%S UTC')" >> status_report.md
-        echo "" >> status_report.md
-        echo "## 🤖 Model Performance" >> status_report.md
-        echo "- **XGBoost R²**: 0.516" >> status_report.md
-        echo "- **Random Forest R²**: 0.506" >> status_report.md
-        echo "- **Model Status**: DEPLOYED" >> status_report.md
-        echo "" >> status_report.md
-        echo "## 📡 Data Pipeline" >> status_report.md
-        echo "- **Data Source**: Open-Meteo API" >> status_report.md
-        echo "- **Data Quality**: GOOD" >> status_report.md
-        echo "- **Last Update**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> status_report.md
-        echo "" >> status_report.md
-        echo "## 🔄 Retraining Schedule" >> status_report.md
-        echo "- **Frequency**: Daily at 2 AM UTC" >> status_report.md
-        echo "- **Next Run**: $(date -u -d '+1 day' '+%Y-%m-%d 02:00:00 UTC')" >> status_report.md
-        echo "- **Status**: SCHEDULED" >> status_report.md
-        
-    - name: Upload Status Report
-      uses: actions/upload-artifact@v3
-      with:
-        name: retraining-status-report
-        path: status_report.md
-        
-    - name: Send Success Notification
-      if: success()
-      run: |
-        echo "✅ AQI Model Retraining Monitor - SUCCESS"
-        echo "📊 All systems operational"
-        echo "🔄 Next check scheduled for tomorrow"
-        
-    - name: Send Failure Notification
-      if: failure()
-      run: |
-        echo "❌ AQI Model Retraining Monitor - FAILED"
-        echo "🚨 Please check the logs and investigate issues"
-        echo "📧 Notifications sent to configured email addresses"
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  alert-on-failure:
-    runs-on: ubuntu-latest
-    needs: monitor-retraining
-    if: failure()
-    
-    steps:
-    - name: Send Alert Email
-      run: |
-        echo "🚨 ALERT: AQI Model Retraining Monitor Failed"
-        echo "📧 Sending alert notifications..."
-        echo "🔍 Check the logs for detailed error information"
-        echo "⚡ Immediate attention required"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pipeline update
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+        run: |
+          python -m src.main update

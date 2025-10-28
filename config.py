@@ -2,8 +2,8 @@ import os
 from datetime import datetime, timedelta
 
 # API Configuration
-HOPSWORKS_API_KEY = "WZ3u2yTwAm522Evv.r6gy210NwISnx7xA8qETzTLAkzb0QX4chVFyWp2lIgTyDVEuVnSw2SjfhJkspWe4"
-HOPSWORKS_PROJECT_NAME = "aqi_maazkhan"
+HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY", "")
+HOPSWORKS_PROJECT_NAME = os.getenv("HOPSWORKS_PROJECT_NAME", "aqi_maazkhan")
 HOPSWORKS_FEATURE_GROUP_NAME = "london_air_quality_6h"
 HOPSWORKS_FEATURE_GROUP_VERSION = 1
 HOPSWORKS_FEATURE_VIEW_NAME = "london_air_quality_6h_view"
