@@ -27,4 +27,8 @@ jobs:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
         run: |
+          echo "Testing environment variables..."
+          echo "API Key length: ${#HOPSWORKS_API_KEY}"
+          echo "Project name: $HOPSWORKS_PROJECT_NAME"
+          echo "Running pipeline..."
           python -m src.main update
