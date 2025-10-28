@@ -1,0 +1,144 @@
+{
+  "data_source": "test_data",
+  "validation_timestamp": "2025-10-28T20:01:58.275349",
+  "total_records": 50,
+  "total_columns": 16,
+  "schema_check": {
+    "status": "PASS",
+    "missing_columns": [],
+    "extra_columns": [],
+    "type_mismatches": [],
+    "column_count": 16
+  },
+  "range_check": {
+    "status": "WARN",
+    "out_of_range": {
+      "aqi": {
+        "min_valid": 0,
+        "max_valid": 500,
+        "violations": 2,
+        "min_actual": -6.694477060117592,
+        "max_actual": 600.0,
+        "violation_percentage": 4.0
+      },
+      "pm2_5": {
+        "min_valid": 0,
+        "max_valid": 500,
+        "violations": 1,
+        "min_actual": -1.9364013137436977,
+        "max_actual": 49.673793246298615,
+        "violation_percentage": 2.0
+      },
+      "co": {
+        "min_valid": 0,
+        "max_valid": 50,
+        "violations": 1,
+        "min_actual": -0.7044818246545401,
+        "max_actual": 2.081164575621648,
+        "violation_percentage": 2.0
+      }
+    },
+    "total_violations": 4
+  },
+  "null_check": {
+    "status": "FAIL",
+    "null_counts": {
+      "timestamp": {
+        "count": 3,
+        "percentage": 6.0
+      },
+      "city": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "latitude": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "longitude": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "aqi": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "pm2_5": {
+        "count": 1,
+        "percentage": 2.0
+      },
+      "pm10": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "o3": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "no2": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "so2": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "co": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "temperature_2m": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "relative_humidity_2m": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "pressure_msl": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "wind_speed_10m": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "wind_direction_10m": {
+        "count": 0,
+        "percentage": 0.0
+      }
+    },
+    "critical_nulls": {
+      "timestamp": {
+        "count": 3,
+        "percentage": 6.0
+      },
+      "pm2_5": {
+        "count": 1,
+        "percentage": 2.0
+      }
+    },
+    "total_nulls": 4
+  },
+  "freshness_check": {
+    "status": "WARN",
+    "latest_timestamp": "2025-10-30T01:00:00",
+    "oldest_timestamp": "2025-10-28T00:00:00",
+    "data_age_hours": -28.967139365277777,
+    "time_gaps": [
+      {
+        "gap_start": "2025-10-28T07:00:00",
+        "gap_end": "2025-10-28T08:00:00",
+        "gap_hours": 4.0
+      }
+    ]
+  },
+  "overall_status": "FAIL",
+  "issues": [
+    "Critical validation failures detected"
+  ],
+  "recommendations": [
+    "Review data collection process for out-of-range values",
+    "Fix null values in critical columns before processing"
+  ]
+}

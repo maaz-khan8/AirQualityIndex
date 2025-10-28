@@ -1,0 +1,164 @@
+
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>EDA Report - test_data</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .header { background-color: #f0f0f0; padding: 20px; border-radius: 5px; }
+                    .section { margin: 20px 0; }
+                    .metric { display: inline-block; margin: 10px; padding: 10px; background-color: #e8f4fd; border-radius: 5px; }
+                    .plot { text-align: center; margin: 20px 0; }
+                    .plot img { max-width: 100%; height: auto; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Exploratory Data Analysis Report</h1>
+                    <p><strong>Data Source:</strong> test_data</p>
+                    <p><strong>Generated:</strong> 2025-10-28T20:08:12.590794</p>
+                    <p><strong>Analysis Period:</strong> 2025-10-01 to 2025-10-05</p>
+                </div>
+                
+                <div class="section">
+                    <h2>Data Overview</h2>
+                    <div class="metric"><strong>Total Records:</strong> 100</div>
+                    <div class="metric"><strong>Total Columns:</strong> 16</div>
+                    <div class="metric"><strong>Duration:</strong> 4 days</div>
+                </div>
+            
+                <div class="section">
+                    <h2>Distribution Analysis</h2>
+                    <p>Key statistics for numeric variables:</p>
+                
+                        <div class="metric">
+                            <strong>latitude:</strong><br>
+                            Mean: 51.51<br>
+                            Std: 0.00<br>
+                            Skewness: -1.00
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>longitude:</strong><br>
+                            Mean: -0.13<br>
+                            Std: 0.00<br>
+                            Skewness: nan
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>aqi:</strong><br>
+                            Mean: 47.73<br>
+                            Std: 17.27<br>
+                            Skewness: 0.01
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>pm2_5:</strong><br>
+                            Mean: 25.71<br>
+                            Std: 9.84<br>
+                            Skewness: -0.15
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>pm10:</strong><br>
+                            Mean: 40.02<br>
+                            Std: 14.66<br>
+                            Skewness: 0.14
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>o3:</strong><br>
+                            Mean: 60.66<br>
+                            Std: 17.49<br>
+                            Skewness: 0.46
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>no2:</strong><br>
+                            Mean: 30.08<br>
+                            Std: 8.77<br>
+                            Skewness: -0.17
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>so2:</strong><br>
+                            Mean: 10.04<br>
+                            Std: 4.32<br>
+                            Skewness: -0.14
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>co:</strong><br>
+                            Mean: 0.95<br>
+                            Std: 0.45<br>
+                            Skewness: 0.11
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>temperature_2m:</strong><br>
+                            Mean: 15.10<br>
+                            Std: 4.90<br>
+                            Skewness: -0.08
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>relative_humidity_2m:</strong><br>
+                            Mean: 69.20<br>
+                            Std: 10.43<br>
+                            Skewness: -0.03
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>pressure_msl:</strong><br>
+                            Mean: 1013.04<br>
+                            Std: 9.36<br>
+                            Skewness: -0.32
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>wind_speed_10m:</strong><br>
+                            Mean: 5.14<br>
+                            Std: 1.87<br>
+                            Skewness: 0.04
+                        </div>
+                        
+                        <div class="metric">
+                            <strong>wind_direction_10m:</strong><br>
+                            Mean: 178.82<br>
+                            Std: 29.22<br>
+                            Skewness: -0.34
+                        </div>
+                        </div>
+                <div class="section">
+                    <h2>AQI Correlations</h2>
+                    <p>Variables most correlated with AQI:</p>
+                <div class='metric'><strong>pm10:</strong> -0.205</div><div class='metric'><strong>o3:</strong> 0.169</div><div class='metric'><strong>wind_speed_10m:</strong> 0.126</div><div class='metric'><strong>so2:</strong> 0.115</div><div class='metric'><strong>co:</strong> 0.111</div></div>
+                <div class="section">
+                    <h2>Visualizations</h2>
+                
+                        <div class="plot">
+                            <h3>Distribution Plot</h3>
+                            <img src="distributions.png" alt="distribution_plot">
+                        </div>
+                        
+                        <div class="plot">
+                            <h3>Time Series Plot</h3>
+                            <img src="time_series.png" alt="time_series_plot">
+                        </div>
+                        
+                        <div class="plot">
+                            <h3>Correlation Plot</h3>
+                            <img src="correlation_heatmap.png" alt="correlation_plot">
+                        </div>
+                        </div>
+                <div class="section">
+                    <h2>Report Information</h2>
+                    <p>This EDA report was automatically generated by the AQI forecasting system.</p>
+                    <p>For more details, check the dashboard or contact the data team.</p>
+                </div>
+            </body>
+            </html>
+            

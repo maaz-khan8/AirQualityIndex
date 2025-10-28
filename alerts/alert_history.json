@@ -1,0 +1,67 @@
+[
+  {
+    "timestamp": "2025-10-28T19:52:31.133431",
+    "aqi_value": 120.5,
+    "severity": "moderate",
+    "source": "current",
+    "message": "Unhealthy air quality for sensitive groups detected: AQI 120.5 (current)",
+    "threshold_exceeded": "Moderate (100+)",
+    "recommendations": [
+      "Sensitive groups should reduce outdoor activities",
+      "Consider wearing a mask if spending time outdoors",
+      "Keep windows closed if possible"
+    ]
+  },
+  {
+    "timestamp": "2025-10-28T19:52:31.133431",
+    "aqi_value": 125.0,
+    "severity": "moderate",
+    "source": "1h_random_forest",
+    "message": "Unhealthy air quality for sensitive groups detected: AQI 125.0 (1h_random_forest)",
+    "threshold_exceeded": "Moderate (100+)",
+    "recommendations": [
+      "Sensitive groups should reduce outdoor activities",
+      "Consider wearing a mask if spending time outdoors",
+      "Keep windows closed if possible"
+    ]
+  },
+  {
+    "timestamp": "2025-10-28T19:52:31.133431",
+    "aqi_value": 118.0,
+    "severity": "moderate",
+    "source": "1h_ridge_regression",
+    "message": "Unhealthy air quality for sensitive groups detected: AQI 118.0 (1h_ridge_regression)",
+    "threshold_exceeded": "Moderate (100+)",
+    "recommendations": [
+      "Sensitive groups should reduce outdoor activities",
+      "Consider wearing a mask if spending time outdoors",
+      "Keep windows closed if possible"
+    ]
+  },
+  {
+    "timestamp": "2025-10-28T19:52:31.133431",
+    "aqi_value": 130.0,
+    "severity": "moderate",
+    "source": "6h_random_forest",
+    "message": "Unhealthy air quality for sensitive groups detected: AQI 130.0 (6h_random_forest)",
+    "threshold_exceeded": "Moderate (100+)",
+    "recommendations": [
+      "Sensitive groups should reduce outdoor activities",
+      "Consider wearing a mask if spending time outdoors",
+      "Keep windows closed if possible"
+    ]
+  },
+  {
+    "timestamp": "2025-10-28T19:52:31.133431",
+    "aqi_value": 122.0,
+    "severity": "moderate",
+    "source": "6h_ridge_regression",
+    "message": "Unhealthy air quality for sensitive groups detected: AQI 122.0 (6h_ridge_regression)",
+    "threshold_exceeded": "Moderate (100+)",
+    "recommendations": [
+      "Sensitive groups should reduce outdoor activities",
+      "Consider wearing a mask if spending time outdoors",
+      "Keep windows closed if possible"
+    ]
+  }
+]

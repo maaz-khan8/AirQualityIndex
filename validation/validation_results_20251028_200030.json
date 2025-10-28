@@ -1,0 +1,95 @@
+{
+  "data_source": "test_data",
+  "validation_timestamp": "2025-10-28T20:00:30.352335",
+  "total_records": 50,
+  "total_columns": 16,
+  "schema_check": {
+    "status": "PASS",
+    "missing_columns": [],
+    "extra_columns": [],
+    "type_mismatches": [],
+    "column_count": 16
+  },
+  "range_check": {
+    "status": "ERROR",
+    "error": "'violation_percentage'"
+  },
+  "null_check": {
+    "status": "FAIL",
+    "null_counts": {
+      "timestamp": {
+        "count": 3,
+        "percentage": 6.0
+      },
+      "city": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "latitude": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "longitude": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "aqi": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "pm2_5": {
+        "count": 1,
+        "percentage": 2.0
+      },
+      "pm10": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "o3": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "no2": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "so2": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "co": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "temperature_2m": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "relative_humidity_2m": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "pressure_msl": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "wind_speed_10m": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "wind_direction_10m": {
+        "count": 0,
+        "percentage": 0.0
+      }
+    },
+    "critical_nulls": {
+      "timestamp": {
+        "count": 3,
+        "percentage": 6.0
+      },
+      "pm2_5": {
+        "count": 1,
+        "percentage": 2.0
+      }
+    },
+    "total_nulls": 

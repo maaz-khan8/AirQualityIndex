@@ -36,7 +36,7 @@ def run_dashboard():
         ])
         logger.info("Dashboard process started at http://localhost:8501")
         return True
-            
+        
     except Exception as e:
         logger.error(f"Dashboard failed: {str(e)}")
         return False
@@ -94,6 +94,12 @@ def main():
     parser.add_argument("command", choices=["setup", "update", "dashboard", "test"], 
                        help="Command to run: setup (initial), update (daily), dashboard, test")
     
+    # Add optional date range parameters for setup command
+    parser.add_argument("--start", type=str, 
+                       help="Start date for data collection (YYYY-MM-DD format). Default: 1 year ago")
+    parser.add_argument("--end", type=str, 
+                       help="End date for data collection (YYYY-MM-DD format). Default: today")
+    
     args = parser.parse_args()
     
     logger.info("=== Air Quality Index Forecasting Pipeline ===")
@@ -106,8 +112,14 @@ def main():
         elif args.command == "test":
             success = test_connections()
         else:
-            # Run unified pipeline
-            success = run_unified_pipeline(mode=args.command)
+            # Run unified pipeline with optional date parameters
+            date_params = {}
+            if args.start:
+                date_params['start_date'] = args.start
+            if args.end:
+                date_params['end_date'] = args.end
+            
+            success = run_unified_pipeline(mode=args.command, date_params=date_params)
         
         if success:
             logger.info(f"{args.command} completed successfully!")
@@ -115,7 +127,7 @@ def main():
             logger.error(f"{args.command} failed!")
             
         return success
-        
+            
     except Exception as e:
         logger.error(f"Command '{args.command}' failed: {str(e)}")
         return False
