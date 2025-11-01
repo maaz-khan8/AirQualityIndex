@@ -1,5 +1,5 @@
 {
-  "analysis_timestamp": "2025-11-01T23:18:20.357976",
+  "analysis_timestamp": "2025-11-02T00:22:08.106069",
   "models_analyzed": [
     "random_forest",
     "ridge_regression"
@@ -7,49 +7,49 @@
   "results": {
     "random_forest": {
       "model_name": "random_forest_6h",
-      "analysis_timestamp": "2025-11-01T23:18:19.701590",
+      "analysis_timestamp": "2025-11-02T00:22:07.597429",
       "test_samples_analyzed": 100,
-      "total_features": 125,
+      "total_features": 107,
       "top_features": [
         {
-          "feature": "aqi_lag_1h",
-          "importance": 18.829566676957153
-        },
-        {
           "feature": "pm2_5",
-          "importance": 4.845947237944807
+          "importance": 2.3490411834895917
         },
         {
-          "feature": "pm2_5_lag_2h",
-          "importance": 1.5373042474931373
+          "feature": "aqi_lag_1h",
+          "importance": 1.44383734631781
         },
         {
-          "feature": "pm10_rolling_mean_3h",
-          "importance": 1.3515643516535443
+          "feature": "pm10",
+          "importance": 1.3904855879834725
+        },
+        {
+          "feature": "pm_combined",
+          "importance": 1.2636848710777302
         },
         {
           "feature": "pm2_5_lag_1h",
-          "importance": 1.1859539291492007
+          "importance": 1.0599001018983731
         },
         {
-          "feature": "ozone_ppb",
-          "importance": 0.8557562011912633
-        },
-        {
-          "feature": "ozone",
-          "importance": 0.8031635317702596
-        },
-        {
-          "feature": "pm10_rolling_mean_6h",
-          "importance": 0.6587849230077726
-        },
-        {
-          "feature": "pm10_lag_3h",
-          "importance": 0.6526274640090545
+          "feature": "carbon_monoxide_ppm",
+          "importance": 0.7400842635950358
         },
         {
           "feature": "pm10_lag_1h",
-          "importance": 0.6378032096401195
+          "importance": 0.6733332315338464
+        },
+        {
+          "feature": "pm2_5_rolling_mean_12h",
+          "importance": 0.5225110864281821
+        },
+        {
+          "feature": "carbon_monoxide",
+          "importance": 0.43202084758401116
+        },
+        {
+          "feature": "sulphur_dioxide",
+          "importance": 0.3438198754496832
         }
       ],
       "artifacts": {
@@ -60,49 +60,49 @@
     },
     "ridge_regression": {
       "model_name": "ridge_regression_6h",
-      "analysis_timestamp": "2025-11-01T23:18:20.354663",
+      "analysis_timestamp": "2025-11-02T00:22:08.102083",
       "test_samples_analyzed": 100,
-      "total_features": 125,
+      "total_features": 107,
       "top_features": [
         {
           "feature": "pm_combined",
-          "importance": 11.880632266699308
+          "importance": 9.974546418686081
         },
         {
           "feature": "pm2_5",
-          "importance": 9.960994550248543
-        },
-        {
-          "feature": "pm2_5_lag_1h",
-          "importance": 4.624595600797057
-        },
-        {
-          "feature": "ozone_rolling_mean_6h",
-          "importance": 3.8261226153876837
+          "importance": 8.27414352108192
         },
         {
           "feature": "relative_humidity_2m",
-          "importance": 3.8134188650217253
+          "importance": 3.9388405851455683
         },
         {
-          "feature": "pm2_5_rolling_mean_12h",
-          "importance": 3.768036782034643
+          "feature": "relative_humidity_2m_rolling_mean_12h",
+          "importance": 3.9020195571776695
         },
         {
-          "feature": "nitrogen_dioxide_lag_2h",
-          "importance": 3.751989213393322
+          "feature": "pm2_5_lag_1h",
+          "importance": 3.257617130773298
         },
         {
           "feature": "pm10",
-          "importance": 3.594583292898313
+          "importance": 2.933683734652264
         },
         {
-          "feature": "wind_speed_10m_rolling_mean_12h",
-          "importance": 3.285571609342726
+          "feature": "temp_humidity_interaction",
+          "importance": 2.9035225731861085
         },
         {
-          "feature": "pm2_5_rolling_mean_24h",
-          "importance": 3.2692958778947316
+          "feature": "nitrogen_dioxide",
+          "importance": 2.632181526004425
+        },
+        {
+          "feature": "temperature_2m",
+          "importance": 2.3443514236103424
+        },
+        {
+          "feature": "pm10_lag_1h",
+          "importance": 2.336038681630168
         }
       ],
       "artifacts": {

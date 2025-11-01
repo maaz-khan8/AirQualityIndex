@@ -118,7 +118,8 @@ METRICS = ['mse', 'rmse', 'mae', 'r2', 'mape']
 
 # Logging
 LOG_LEVEL = "INFO"
-LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+LOG_FORMAT = "%(message)s"
+LOG_FILE_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 LOGS_DIR = "logs"
 LOG_FILE = f"{LOGS_DIR}/aqi_project.log"
 PLOTS_DIR = "plots"

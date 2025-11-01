@@ -1,42 +1,42 @@
 [
   {
     "feature":"pm_combined",
-    "importance":11.8806322667
+    "importance":9.9745464187
   },
   {
     "feature":"pm2_5",
-    "importance":9.9609945502
-  },
-  {
-    "feature":"pm2_5_lag_1h",
-    "importance":4.6245956008
-  },
-  {
-    "feature":"ozone_rolling_mean_6h",
-    "importance":3.8261226154
+    "importance":8.2741435211
   },
   {
     "feature":"relative_humidity_2m",
-    "importance":3.813418865
+    "importance":3.9388405851
   },
   {
-    "feature":"pm2_5_rolling_mean_12h",
-    "importance":3.768036782
+    "feature":"relative_humidity_2m_rolling_mean_12h",
+    "importance":3.9020195572
   },
   {
-    "feature":"nitrogen_dioxide_lag_2h",
-    "importance":3.7519892134
+    "feature":"pm2_5_lag_1h",
+    "importance":3.2576171308
   },
   {
     "feature":"pm10",
-    "importance":3.5945832929
+    "importance":2.9336837347
   },
   {
-    "feature":"wind_speed_10m_rolling_mean_12h",
-    "importance":3.2855716093
+    "feature":"temp_humidity_interaction",
+    "importance":2.9035225732
   },
   {
-    "feature":"pm2_5_rolling_mean_24h",
-    "importance":3.2692958779
+    "feature":"nitrogen_dioxide",
+    "importance":2.632181526
+  },
+  {
+    "feature":"temperature_2m",
+    "importance":2.3443514236
+  },
+  {
+    "feature":"pm10_lag_1h",
+    "importance":2.3360386816
   }
 ]

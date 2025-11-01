@@ -11,15 +11,19 @@ from src.feature_engineering import FeatureEngineer
 from src.training import MultiHorizonForecaster
 from src.hopsworks_client import HopsworksClient
 
-logging.basicConfig(
-    level=getattr(logging, config.LOG_LEVEL),
-    format=config.LOG_FORMAT,
-    handlers=[
-        logging.FileHandler(config.LOG_FILE),
-        logging.StreamHandler()
-    ]
-)
+# Configure logging (avoid duplicate handlers if main.py already set it up)
 logger = logging.getLogger(__name__)
+if not logger.handlers:
+    root_logger = logging.getLogger()
+    if not root_logger.handlers:
+        root_logger.setLevel(getattr(logging, config.LOG_LEVEL))
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter(config.LOG_FORMAT))
+        file_handler = logging.FileHandler(config.LOG_FILE)
+        file_handler.setFormatter(logging.Formatter(config.LOG_FILE_FORMAT))
+        file_handler.setLevel(logging.DEBUG)
+        root_logger.addHandler(console_handler)
+        root_logger.addHandler(file_handler)
 
 
 class UnifiedPipeline:
@@ -55,7 +59,7 @@ class UnifiedPipeline:
     
     def initial_setup(self) -> bool:
         try:
-            logger.info("=== INITIAL SETUP MODE ===")
+            logger.debug("=== INITIAL SETUP MODE ===")
             
             # Step 1: Determine date range
             if 'start_date' in self.date_params and 'end_date' in self.date_params:
@@ -70,16 +74,16 @@ class UnifiedPipeline:
                     logger.error(f"Invalid date format: {str(e)}. Use YYYY-MM-DD format.")
                     return False
                 
-                logger.info(f"Using custom date range: {start_date_str} to {end_date_str}")
+                logger.debug(f"Using custom date range: {start_date_str} to {end_date_str}")
             else:
                 # Default: 1 year of data
                 end_date = datetime.now()
                 start_date = end_date - timedelta(days=365)
                 start_date_str = start_date.strftime('%Y-%m-%d')
                 end_date_str = end_date.strftime('%Y-%m-%d')
-                logger.info(f"Using default date range (1 year): {start_date_str} to {end_date_str}")
+                logger.debug(f"Using default date range (1 year): {start_date_str} to {end_date_str}")
             
-            logger.info(f"Fetching historical data from {start_date_str} to {end_date_str}")
+            logger.info("Fetching data...")
             
             df = self.data_fetcher.fetch_combined_historical_data(
                 start_date=start_date_str,
@@ -90,17 +94,17 @@ class UnifiedPipeline:
                 logger.error("Failed to fetch historical data")
                 return False
             
-            logger.info(f"Fetched {len(df)} records for initial setup")
+            logger.info(f"Fetched {len(df)} records")
             
             # Step 2: Generate EDA snapshot
-            logger.info("Generating EDA snapshot...")
+            logger.debug("Generating EDA snapshot...")
             from src.eda import EDASnapshot
             eda = EDASnapshot()
             eda_results = eda.generate_eda_report(df, "initial_setup")
             
             if eda_results['status'] == 'SUCCESS':
                 artifacts_count = len(eda_results.get('artifacts', {}))
-                logger.info(f"EDA snapshot generated with {artifacts_count} visualizations")
+                logger.debug(f"EDA snapshot generated with {artifacts_count} visualizations")
             else:
                 logger.warning(f"EDA snapshot generation failed: {eda_results.get('error', 'Unknown error')}")
             
@@ -112,22 +116,23 @@ class UnifiedPipeline:
                 logger.error("Feature engineering failed")
                 return False
             
-            logger.info(f"Engineered {len(df_features)} samples with {len(df_features.columns)} features")
+            logger.info(f"Created {len(df_features)} samples with {len(df_features.columns)} features")
             
             # Step 3: Connect to Hopsworks
+            logger.debug("Connecting to Hopsworks...")
             if not self.client.connect():
                 logger.error("Failed to connect to Hopsworks")
                 return False
             
             # Step 4: Upload to Hopsworks
-            logger.info("Uploading data to Hopsworks...")
+            logger.info("Uploading to Hopsworks...")
             fg = self.client.create_feature_group(df_features)
             if fg is None:
                 logger.error("Failed to upload data to Hopsworks")
                 return False
             
             # Step 5: Train multi-output models (for all horizons)
-            logger.info("Training multi-output models for all horizons...")
+            logger.info("Training models...")
             X_multi, Y_multi = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_features)
             if X_multi is not None and Y_multi is not None:
                 horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(X_multi, Y_multi)
@@ -178,13 +183,13 @@ class UnifiedPipeline:
                     logger.error(f"Failed to save multi-horizon models: {str(e)}")
             
             # Step 7: Run alerts and interpretability
-            logger.info("Running alert system...")
+            logger.debug("Running alert system...")
             self.run_alert_system()
             
-            logger.info("Running interpretability analysis...")
+            logger.debug("Running interpretability analysis...")
             self.run_interpretability_analysis()
             
-            logger.info("Initial setup completed successfully!")
+            logger.info("Setup completed successfully")
             return True
             
         except Exception as e:
@@ -194,8 +199,8 @@ class UnifiedPipeline:
     def daily_update(self) -> bool:
         """Daily update: Fetch 1 day of new data, append to Hopsworks, retrain models"""
         try:
-            logger.info("=== DAILY UPDATE MODE ===")
-            logger.info("Fetching 1 day of new data...")
+            logger.debug("=== DAILY UPDATE MODE ===")
+            logger.info("Fetching new data...")
             
             # Step 1: Fetch new data (last 1 day)
             end_date = datetime.now()
@@ -204,7 +209,7 @@ class UnifiedPipeline:
             start_date_str = start_date.strftime('%Y-%m-%d')
             end_date_str = end_date.strftime('%Y-%m-%d')
             
-            logger.info(f"Fetching data from {start_date_str} to {end_date_str}")
+            logger.debug(f"Fetching data from {start_date_str} to {end_date_str}")
             
             df_new = self.data_fetcher.fetch_combined_historical_data(
                 start_date=start_date_str,
@@ -218,7 +223,7 @@ class UnifiedPipeline:
             logger.info(f"Fetched {len(df_new)} new records")
             
             # Step 2: Generate EDA snapshot for new data
-            logger.info("Generating EDA snapshot for new data...")
+            logger.debug("Generating EDA snapshot for new data...")
             from src.eda import EDASnapshot
             eda = EDASnapshot()
             eda_results = eda.generate_eda_report(df_new, "daily_update")
@@ -230,38 +235,39 @@ class UnifiedPipeline:
                 logger.warning(f"EDA snapshot generation failed: {eda_results.get('error', 'Unknown error')}")
             
             # Step 4: Engineer features for new data
-            logger.info("Engineering features for new data...")
+            logger.info("Engineering features...")
             df_new_features = self.feature_engineer.engineer_features(df_new)
             
             if df_new_features is None or df_new_features.empty:
                 logger.error("Feature engineering failed for new data")
                 return False
             
-            logger.info(f"Engineered {len(df_new_features)} new samples")
+            logger.info(f"Created {len(df_new_features)} new samples")
             
             # Step 3: Connect to Hopsworks
+            logger.debug("Connecting to Hopsworks...")
             if not self.client.connect():
                 logger.error("Failed to connect to Hopsworks")
                 return False
             
             # Step 4: Append new data to existing feature group
-            logger.info("Appending new data to Hopsworks...")
+            logger.info("Uploading to Hopsworks...")
             fg = self.client.create_feature_group(df_new_features)
             if fg is None:
                 logger.error("Failed to append data to Hopsworks")
                 return False
             
-            logger.info(f"Successfully appended {len(df_new_features)} records to Hopsworks")
+            logger.debug(f"Successfully appended {len(df_new_features)} records to Hopsworks")
             
             # Step 5: Get updated data and retrain multi-output models
-            logger.info("Retraining multi-output models with updated data...")
+            logger.info("Retraining models...")
             df_updated = self.client.get_feature_data()
             
             if df_updated is None or df_updated.empty:
                 logger.error("No updated data available from Hopsworks")
                 return False
             
-            logger.info(f"Retraining with {len(df_updated)} total records")
+            logger.debug(f"Retraining with {len(df_updated)} total records")
             
             # Retrain multi-output models
             X_multi, Y_multi = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_updated)
@@ -313,10 +319,10 @@ class UnifiedPipeline:
                     logger.error(f"Failed to save multi-horizon models: {str(e)}")
             
             # Step 6: Run alerts
-            logger.info("Running alert system...")
+            logger.debug("Running alert system...")
             self.run_alert_system()
             
-            logger.info("Daily update completed successfully!")
+            logger.info("Update completed successfully")
             return True
             
         except Exception as e:
@@ -326,7 +332,7 @@ class UnifiedPipeline:
     def run_alert_system(self) -> bool:
         """Run AQI alert system"""
         try:
-            logger.info("Running AQI alert system...")
+            logger.debug("Running AQI alert system...")
             
             # Import alert system
             from src.alerts import AQIAlertSystem
@@ -359,19 +365,19 @@ class UnifiedPipeline:
             alert_results = alert_system.run_alert_check(df_data, models_for_alerts)
             
             if alert_results.get('alerts'):
-                logger.info(f"Alert system generated {len(alert_results['alerts'])} alerts")
+                logger.debug(f"Alert system generated {len(alert_results['alerts'])} alerts")
                 
                 # Log critical alerts
                 for alert in alert_results['alerts']:
                     if alert['severity'] == 'critical':
                         logger.warning(f"CRITICAL ALERT: {alert['message']}")
             else:
-                logger.info("No new alerts generated")
+                logger.debug("No new alerts generated")
             
             # Log alert summary
             summary = alert_results.get('summary', {})
             if summary:
-                logger.info(f"Alert summary: {summary.get('total_alerts', 0)} alerts in last 24h")
+                logger.debug(f"Alert summary: {summary.get('total_alerts', 0)} alerts in last 24h")
             
             return True
                 
@@ -382,7 +388,7 @@ class UnifiedPipeline:
     def run_interpretability_analysis(self) -> bool:
         """Run SHAP model interpretability analysis"""
         try:
-            logger.info("Running SHAP interpretability analysis...")
+            logger.debug("Running SHAP interpretability analysis...")
             
             # Import SHAP analyzer
             from src.interpretability import SHAPAnalyzer
@@ -426,8 +432,8 @@ class UnifiedPipeline:
             y_train_shap = Y_train.iloc[:, 1]  # 6h horizon
             y_test_shap = Y_test.iloc[:, 1]
             
-            logger.info(f"Running SHAP analysis on {len(models_for_shap)} multi-output models")
-            logger.info(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
+            logger.debug(f"Running SHAP analysis on {len(models_for_shap)} models")
+            logger.debug(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
             
             # Run SHAP analysis on each model (using 6h horizon predictions)
             shap_results = {}
@@ -488,13 +494,13 @@ class UnifiedPipeline:
 def run_unified_pipeline(mode='setup', date_params=None):
     """Main function to run unified pipeline"""
     try:
-        logger.info(f"Starting unified pipeline in '{mode}' mode")
+        logger.debug(f"Starting unified pipeline in '{mode}' mode")
         
         pipeline = UnifiedPipeline(mode=mode, date_params=date_params)
         success = pipeline.run()
         
         if success:
-            logger.info(f"Unified pipeline completed successfully in '{mode}' mode")
+            logger.debug(f"Unified pipeline completed successfully in '{mode}' mode")
         else:
             logger.error(f"Unified pipeline failed in '{mode}' mode")
             
