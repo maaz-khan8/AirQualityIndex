@@ -1,8 +1,3 @@
-"""
-AQI Alerting System
-Monitors AQI values and predictions against thresholds and generates alerts
-"""
-
 import pandas as pd
 import numpy as np
 import logging
@@ -20,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class AlertSeverity(Enum):
-    """Alert severity levels"""
     LOW = "low"
     MODERATE = "moderate"
     HIGH = "high"
@@ -28,10 +22,6 @@ class AlertSeverity(Enum):
 
 
 class AQIAlertSystem:
-    """
-    AQI Alerting System that monitors current and predicted AQI values
-    against predefined thresholds and generates alerts
-    """
     
     def __init__(self):
         # AQI thresholds based on EPA standards
@@ -54,17 +44,6 @@ class AQIAlertSystem:
     
     def evaluate_alerts(self, current_aqi: float, predictions: Dict[int, Dict[str, float]], 
                        timestamp: datetime = None) -> List[Dict[str, Any]]:
-        """
-        Evaluate alerts based on current AQI and predictions
-        
-        Args:
-            current_aqi: Current AQI value
-            predictions: Dictionary of horizon -> model -> prediction
-            timestamp: Timestamp for the evaluation
-            
-        Returns:
-            List of generated alerts
-        """
         if timestamp is None:
             timestamp = datetime.now()
         
@@ -115,7 +94,6 @@ class AQIAlertSystem:
                     'recommendations': self._get_recommendations(severity)
                 }
                 
-                # Check if this is a new alert (avoid duplicates)
                 if self._is_new_alert(alert):
                     alerts.append(alert)
                     logger.info(f"New {severity.value} alert: AQI {aqi_value:.1f} from {source}")
@@ -127,7 +105,6 @@ class AQIAlertSystem:
             return []
     
     def _get_aqi_severity(self, aqi_value: float) -> AlertSeverity:
-        """Determine alert severity based on AQI value"""
         if aqi_value >= self.aqi_thresholds[AlertSeverity.CRITICAL]:
             return AlertSeverity.CRITICAL
         elif aqi_value >= self.aqi_thresholds[AlertSeverity.HIGH]:
@@ -138,7 +115,6 @@ class AQIAlertSystem:
             return AlertSeverity.LOW
     
     def _get_exceeded_threshold(self, aqi_value: float) -> str:
-        """Get the highest threshold exceeded"""
         if aqi_value >= self.aqi_thresholds[AlertSeverity.CRITICAL]:
             return "Critical (200+)"
         elif aqi_value >= self.aqi_thresholds[AlertSeverity.HIGH]:
@@ -150,7 +126,6 @@ class AQIAlertSystem:
     
     def _generate_alert_message(self, aqi_value: float, severity: AlertSeverity, 
                                source: str) -> str:
-        """Generate human-readable alert message"""
         severity_text = {
             AlertSeverity.LOW: "Moderate air quality concern",
             AlertSeverity.MODERATE: "Unhealthy air quality for sensitive groups",
@@ -161,7 +136,6 @@ class AQIAlertSystem:
         return f"{severity_text[severity]} detected: AQI {aqi_value:.1f} ({source})"
     
     def _get_recommendations(self, severity: AlertSeverity) -> List[str]:
-        """Get recommendations based on alert severity"""
         recommendations = {
             AlertSeverity.LOW: [
                 "Consider reducing outdoor activities if you're sensitive to air pollution",
@@ -291,16 +265,6 @@ class AQIAlertSystem:
             return {}
     
     def send_notification(self, alert: Dict[str, Any], notification_type: str = "log") -> bool:
-        """
-        Send notification for critical alerts
-        
-        Args:
-            alert: Alert dictionary
-            notification_type: Type of notification (log, email, webhook)
-            
-        Returns:
-            True if notification sent successfully
-        """
         try:
             if notification_type == "log":
                 logger.warning(f"ALERT: {alert['message']}")
@@ -325,16 +289,6 @@ class AQIAlertSystem:
             return False
     
     def run_alert_check(self, data: pd.DataFrame, models: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Run complete alert check on current data and model predictions
-        
-        Args:
-            data: Current data DataFrame
-            models: Dictionary of trained models
-            
-        Returns:
-            Alert check results
-        """
         try:
             logger.info("Running alert check...")
             
@@ -345,30 +299,48 @@ class AQIAlertSystem:
                 logger.warning("No current AQI data available")
                 return {'alerts': [], 'summary': {}}
             
-            # Generate predictions for alert evaluation
             predictions = {}
             
-            # Simple prediction for alerting (using latest features)
             if not data.empty and models:
-                latest_features = data.iloc[-1:].select_dtypes(include=[np.number])
+                from src.training import MultiHorizonForecaster
+                forecaster = MultiHorizonForecaster()
                 
-                # Remove target columns
-                feature_cols = [c for c in latest_features.columns 
-                              if c not in ['aqi', 'aqi_6h_ahead']]
-                
-                if feature_cols:
-                    X_latest = latest_features[feature_cols]
+                try:
+                    X_multi, Y_multi = forecaster.prepare_multi_horizon_data(data)
                     
-                    # Generate predictions for different horizons
-                    for horizon in [1, 6, 12, 24]:
-                        predictions[horizon] = {}
+                    if X_multi is not None and not X_multi.empty:
+                        X_latest = X_multi.iloc[-1:].copy()
+                        
+                        horizons_list = forecaster.horizons  # [1, 6, 12, 24, 48, 72]
+                        
                         for model_name, model in models.items():
                             try:
-                                pred = model.predict(X_latest)[0]
-                                predictions[horizon][model_name] = pred
+                                pred_all = model.predict(X_latest)[0]  # Shape: (n_horizons,)
+                                
+                                for idx, horizon in enumerate(horizons_list):
+                                    if idx < len(pred_all):
+                                        if horizon not in predictions:
+                                            predictions[horizon] = {}
+                                        predictions[horizon][model_name] = float(pred_all[idx])
+                                        
                             except Exception as e:
                                 logger.warning(f"Prediction failed for {model_name}: {str(e)}")
-                                predictions[horizon][model_name] = current_aqi  # Fallback
+                                # Fallback: use current AQI for all horizons
+                                for horizon in horizons_list:
+                                    if horizon not in predictions:
+                                        predictions[horizon] = {}
+                                    predictions[horizon][model_name] = current_aqi
+                    else:
+                        logger.warning("Failed to prepare features for alert predictions")
+                        
+                except Exception as e:
+                    logger.warning(f"Feature preparation for alerts failed: {str(e)}")
+                    # Fallback: use current AQI for all horizons
+                    for horizon in [1, 6, 12, 24, 48, 72]:
+                        if horizon not in predictions:
+                            predictions[horizon] = {}
+                        for model_name in models.keys():
+                            predictions[horizon][model_name] = current_aqi
             
             # Evaluate alerts
             alerts = self.evaluate_alerts(current_aqi, predictions)
@@ -396,16 +368,6 @@ class AQIAlertSystem:
 
 
 def run_alert_system(data: pd.DataFrame, models: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Run the complete alerting system
-    
-    Args:
-        data: Current data DataFrame
-        models: Dictionary of trained models
-        
-    Returns:
-        Alert system results
-    """
     try:
         alert_system = AQIAlertSystem()
         results = alert_system.run_alert_check(data, models)

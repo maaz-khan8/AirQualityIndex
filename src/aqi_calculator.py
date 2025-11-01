@@ -1,29 +1,9 @@
-"""
-AQI Calculator - EPA Standard
-Calculates Air Quality Index from pollutant concentrations
-"""
-
 import numpy as np
 import pandas as pd
 
 
 class AQICalculator:
-    """
-    Calculate AQI (Air Quality Index) using EPA standards
     
-    EPA AQI Formula:
-    AQI = [(I_high - I_low) / (C_high - C_low)] * (C - C_low) + I_low
-    
-    Where:
-    - C = pollutant concentration
-    - C_low = concentration breakpoint ≤ C
-    - C_high = concentration breakpoint ≥ C
-    - I_low = AQI value corresponding to C_low
-    - I_high = AQI value corresponding to C_high
-    """
-    
-    # EPA AQI Breakpoints
-    # Format: (C_low, C_high, I_low, I_high)
     
     PM25_BREAKPOINTS = [
         (0.0, 12.0, 0, 50),
@@ -80,16 +60,6 @@ class AQICalculator:
     
     @staticmethod
     def _calculate_aqi_for_pollutant(concentration, breakpoints):
-        """
-        Calculate AQI for a single pollutant
-        
-        Args:
-            concentration: Pollutant concentration
-            breakpoints: List of (C_low, C_high, I_low, I_high) tuples
-            
-        Returns:
-            AQI value for the pollutant
-        """
         if pd.isna(concentration) or concentration < 0:
             return np.nan
         
@@ -115,7 +85,6 @@ class AQICalculator:
     
     @classmethod
     def calculate_o3_aqi(cls, o3):
-        """Calculate AQI from O3 concentration (ppb)"""
         return cls._calculate_aqi_for_pollutant(o3, cls.O3_BREAKPOINTS)
     
     @classmethod
@@ -125,31 +94,14 @@ class AQICalculator:
     
     @classmethod
     def calculate_so2_aqi(cls, so2):
-        """Calculate AQI from SO2 concentration (ppb)"""
         return cls._calculate_aqi_for_pollutant(so2, cls.SO2_BREAKPOINTS)
     
     @classmethod
     def calculate_co_aqi(cls, co):
-        """Calculate AQI from CO concentration (ppm)"""
         return cls._calculate_aqi_for_pollutant(co, cls.CO_BREAKPOINTS)
     
     @classmethod
     def calculate_aqi(cls, pm25=None, pm10=None, o3=None, no2=None, so2=None, co=None):
-        """
-        Calculate overall AQI from multiple pollutants
-        AQI is the maximum of all individual pollutant AQIs
-        
-        Args:
-            pm25: PM2.5 concentration (μg/m³)
-            pm10: PM10 concentration (μg/m³)
-            o3: Ozone concentration (ppb)
-            no2: Nitrogen dioxide concentration (ppb)
-            so2: Sulfur dioxide concentration (ppb)
-            co: Carbon monoxide concentration (ppm)
-            
-        Returns:
-            Overall AQI value (highest among all pollutants)
-        """
         aqi_values = []
         
         if pm25 is not None:
@@ -171,20 +123,10 @@ class AQICalculator:
         if not aqi_values:
             return np.nan
         
-        # Return the maximum AQI (worst pollutant)
         return int(max(aqi_values))
     
     @staticmethod
     def get_aqi_category(aqi):
-        """
-        Get AQI category and health message
-        
-        Args:
-            aqi: AQI value
-            
-        Returns:
-            Dictionary with category, level, and health message
-        """
         if pd.isna(aqi):
             return {
                 "category": "Unknown",
@@ -238,23 +180,6 @@ class AQICalculator:
 
 
 def convert_openmeteo_to_epa_units(df):
-    """
-    Convert Open-Meteo pollutant units to EPA units for AQI calculation
-    
-    Open-Meteo units → EPA units:
-    - PM2.5: μg/m³ → μg/m³ (no conversion needed)
-    - PM10: μg/m³ → μg/m³ (no conversion needed)
-    - O3: μg/m³ → ppb (divide by 2.0)
-    - NO2: μg/m³ → ppb (divide by 1.88)
-    - SO2: μg/m³ → ppb (divide by 2.62)
-    - CO: mg/m³ → ppm (divide by 1.145)
-    
-    Args:
-        df: DataFrame with Open-Meteo pollutant data
-        
-    Returns:
-        DataFrame with EPA-compatible units
-    """
     df = df.copy()
     
     # Convert O3 from μg/m³ to ppb
@@ -277,15 +202,6 @@ def convert_openmeteo_to_epa_units(df):
 
 
 def calculate_aqi_for_dataframe(df):
-    """
-    Calculate AQI for each row in a DataFrame
-    
-    Args:
-        df: DataFrame with pollutant columns (in EPA units)
-        
-    Returns:
-        DataFrame with added 'aqi' column
-    """
     df = df.copy()
     
     # Convert Open-Meteo units to EPA units
@@ -325,5 +241,5 @@ if __name__ == "__main__":
         print(f"Test {i}: {case} → AQI={aqi}, Category={category['category']}")
     
     print("\n" + "="*50)
-    print("✓ AQI Calculator is working correctly!")
+    print("AQI Calculator is working correctly!")
 

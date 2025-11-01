@@ -1,8 +1,3 @@
-"""
-Simplified Main Entry Point for Air Quality Index Forecasting
-Unified pipeline with minimal commands
-"""
-
 import argparse
 import logging
 import config

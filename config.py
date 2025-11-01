@@ -1,26 +1,65 @@
 import os
 from datetime import datetime, timedelta
 
-# Load local environment variables from .env for local/dev only
-# This will not override CI/CD secrets (override=False)
-try:
-    from dotenv import load_dotenv  # type: ignore
-    load_dotenv(override=False)
-except Exception:
-    # dotenv is optional; proceed if not installed (e.g., in CI)
-    pass
+# Load environment variables from .env file
+def load_env_file():
+    """Load environment variables from .env file"""
+    config_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(config_dir, '.env')
+    
+    # Try python-dotenv first
+    try:
+        from dotenv import load_dotenv
+        if os.path.exists(env_path):
+            result = load_dotenv(dotenv_path=env_path, override=True)
+            if result:
+                return
+        # Fallback to current directory
+        load_dotenv(dotenv_path='.env', override=True)
+        return
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    
+    # Fallback: manually parse .env file
+    env_files = [env_path, '.env']
+    for env_file in env_files:
+        if os.path.exists(env_file):
+            try:
+                with open(env_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, value = line.split('=', 1)
+                            key = key.strip()
+                            value = value.strip()
+                            # Remove quotes if present
+                            if value.startswith('"') and value.endswith('"'):
+                                value = value[1:-1]
+                            elif value.startswith("'") and value.endswith("'"):
+                                value = value[1:-1]
+                            # Set environment variable (override=True for .env file)
+                            if key:
+                                os.environ[key] = value
+                return
+            except Exception:
+                continue
+
+load_env_file()
 
 # API Configuration
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY", "")
+
 HOPSWORKS_PROJECT_NAME = os.getenv("HOPSWORKS_PROJECT_NAME", "aqi_maazkhan")
 
 # Validate required environment variables
 if not HOPSWORKS_API_KEY:
     raise ValueError("HOPSWORKS_API_KEY environment variable is required but not set")
 HOPSWORKS_FEATURE_GROUP_NAME = "london_air_quality_6h"
-HOPSWORKS_FEATURE_GROUP_VERSION = 1
+HOPSWORKS_FEATURE_GROUP_VERSION = 5
 HOPSWORKS_FEATURE_VIEW_NAME = "london_air_quality_6h_view"
-HOPSWORKS_FEATURE_VIEW_VERSION = 1
+HOPSWORKS_FEATURE_VIEW_VERSION = 5
 HOPSWORKS_MODEL_NAME = "aqi_6h_forecast"
 
 # Open-Meteo API
@@ -51,22 +90,24 @@ WEATHER_FEATURES = [
 ]
 
 # Feature Engineering
-LAG_HOURS = [1, 2, 3, 6]
-ROLLING_WINDOWS = [3, 6, 12, 24]
+LAG_HOURS = [1, 6]
+ROLLING_WINDOWS = [12, 24, 48]
 FORECAST_HORIZON = 6
 
-# Multi-Horizon Forecasting (3-day ahead predictions)
-FORECAST_HORIZONS = [1, 6, 12, 24, 48, 72]  # 1h, 6h, 12h, 24h, 48h, 72h (3 days)
+FORECAST_HORIZONS = [1, 6, 12, 24, 48, 72]  
 
 # Model Configuration (Based on Key_Features.md)
 MODELS_CONFIG = {
     'random_forest': {
-        'n_estimators': 100,
-        'max_depth': 10,
+        'n_estimators': 50,
+        'max_depth': 5,
+        'min_samples_split': 10,
+        'min_samples_leaf': 5,
+        'max_features': 'sqrt',
         'random_state': 42
     },
     'ridge_regression': {
-        'alpha': 1.0,
+        'alpha': 20.0,
         'random_state': 42
     }
 }
@@ -82,6 +123,4 @@ LOGS_DIR = "logs"
 LOG_FILE = f"{LOGS_DIR}/aqi_project.log"
 PLOTS_DIR = "plots"
 
-# Ensure logs directory exists
-import os
 os.makedirs(LOGS_DIR, exist_ok=True)

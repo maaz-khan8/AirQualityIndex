@@ -173,11 +173,6 @@ def train_from_hopsworks():
 
 
 class MultiHorizonForecaster:
-    """
-    Multi-horizon forecasting for 3-day ahead AQI predictions using Multi-Output Regression
-    Supports multiple time horizons: 1h, 6h, 12h, 24h, 48h, 72h
-    Uses a single model that predicts all horizons simultaneously
-    """
     
     def __init__(self):
         self.models = {}  # Changed from horizon_models to just models
@@ -194,10 +189,6 @@ class MultiHorizonForecaster:
                 self.models[name] = MultiOutputRegressor(base_model)
     
     def prepare_multi_horizon_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Prepare data for multi-output regression (all horizons simultaneously)
-        Returns: (X, Y) where Y has shape (n_samples, n_horizons)
-        """
         try:
             logger.info("Preparing multi-output data for all horizons...")
             
@@ -253,10 +244,6 @@ class MultiHorizonForecaster:
             return None, None
     
     def train_multi_horizon_models(self, X: pd.DataFrame, Y: pd.DataFrame) -> Dict[str, Dict]:
-        """
-        Train multi-output models (one per algorithm, predicts all horizons)
-        Returns: Dict with model_name -> {model, metrics_by_horizon, ...}
-        """
         try:
             if X is None or Y is None or X.empty or Y.empty:
                 logger.error("Invalid input data for multi-horizon training")
@@ -286,6 +273,10 @@ class MultiHorizonForecaster:
                     # Make predictions (shape: n_samples x n_horizons)
                     Y_train_pred = model.predict(X_train)
                     Y_test_pred = model.predict(X_test)
+                    
+                    # Clip predictions to realistic AQI range (0-500)
+                    Y_train_pred = np.clip(Y_train_pred, 0, 500)
+                    Y_test_pred = np.clip(Y_test_pred, 0, 500)
                     
                     # Calculate metrics for each horizon
                     train_metrics_by_horizon = {}
@@ -331,12 +322,44 @@ class MultiHorizonForecaster:
             return {}
     
     def _calculate_metrics(self, y_true, y_pred):
-        """Calculate evaluation metrics"""
-        mse = mean_squared_error(y_true, y_pred)
-        rmse = np.sqrt(mse)
-        mae = mean_absolute_error(y_true, y_pred)
-        r2 = r2_score(y_true, y_pred)
-        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+        """Calculate evaluation metrics with robust handling of edge cases"""
+        # Convert to numpy arrays if needed
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
+        
+        # Handle NaN and infinite values
+        valid_mask = np.isfinite(y_true) & np.isfinite(y_pred)
+        if not np.any(valid_mask):
+            # All values are invalid
+            return {
+                'mse': np.nan, 
+                'rmse': np.nan, 
+                'mae': np.nan, 
+                'r2': -1.0, 
+                'mape': np.nan
+            }
+        
+        y_true_clean = y_true[valid_mask]
+        y_pred_clean = y_pred[valid_mask]
+        
+        # Handle constant target values (R² undefined)
+        if len(np.unique(y_true_clean)) <= 1:
+            mse = mean_squared_error(y_true_clean, y_pred_clean)
+            rmse = np.sqrt(mse)
+            mae = mean_absolute_error(y_true_clean, y_pred_clean)
+            r2 = -1.0  # Return default for constant target
+            mape = np.mean(np.abs((y_true_clean - y_pred_clean) / (y_true_clean + 1e-6))) * 100
+        else:
+            mse = mean_squared_error(y_true_clean, y_pred_clean)
+            rmse = np.sqrt(mse)
+            mae = mean_absolute_error(y_true_clean, y_pred_clean)
+            r2 = r2_score(y_true_clean, y_pred_clean)
+            mape = np.mean(np.abs((y_true_clean - y_pred_clean) / (y_true_clean + 1e-6))) * 100
+        
+        # Handle potential NaN in R² (shouldn't happen with valid data, but be safe)
+        if np.isnan(r2) or np.isinf(r2):
+            r2 = -1.0
+        
         return {'mse': mse, 'rmse': rmse, 'mae': mae, 'r2': r2, 'mape': mape}
     
     def generate_multi_horizon_predictions(self, X_latest: pd.DataFrame, horizon_results: Dict[int, Dict[str, Dict]]) -> Dict[int, Dict[str, float]]:

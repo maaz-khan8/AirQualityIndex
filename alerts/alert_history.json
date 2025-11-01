@@ -63,5 +63,17 @@
       "Consider wearing a mask if spending time outdoors",
       "Keep windows closed if possible"
     ]
+  },
+  {
+    "timestamp": "2025-11-01T23:17:52.099113",
+    "aqi_value": 54.2,
+    "severity": "low",
+    "source": "72h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 54.2 (72h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
   }
 ]

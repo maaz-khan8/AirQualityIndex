@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import logging
 import os
+import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 import config
 from src.data_fetcher import OpenMeteoFetcher
 from src.feature_engineering import FeatureEngineer
-from src.training import AQIForecaster, MultiHorizonForecaster
+from src.training import MultiHorizonForecaster
 from src.hopsworks_client import HopsworksClient
 
 logging.basicConfig(
@@ -22,13 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class UnifiedPipeline:
-    """
-    Unified pipeline that handles all operations based on mode:
-    - setup: Initial setup with 1 year of data
-    - update: Daily updates with new data
-    - alerts: Run alert system
-    - interpretability: Run SHAP analysis
-    """
     
     def __init__(self, mode='setup', date_params=None):
         self.mode = mode
@@ -36,7 +30,6 @@ class UnifiedPipeline:
         self.client = HopsworksClient()
         self.data_fetcher = OpenMeteoFetcher()
         self.feature_engineer = FeatureEngineer()
-        self.forecaster = AQIForecaster()
         self.multi_horizon_forecaster = MultiHorizonForecaster()
         
     def run(self) -> bool:
@@ -61,7 +54,6 @@ class UnifiedPipeline:
             return False
     
     def initial_setup(self) -> bool:
-        """Initial setup: Fetch data for specified date range, train models, save to Hopsworks"""
         try:
             logger.info("=== INITIAL SETUP MODE ===")
             
