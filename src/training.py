@@ -35,11 +35,9 @@ class AQIForecaster:
 
     def _calculate_metrics(self, y_true, y_pred):
         mse = mean_squared_error(y_true, y_pred)
-        rmse = np.sqrt(mse)
         mae = mean_absolute_error(y_true, y_pred)
         r2 = r2_score(y_true, y_pred)
-        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
-        return {'mse': mse, 'rmse': rmse, 'mae': mae, 'r2': r2, 'mape': mape}
+        return {'mse': mse, 'mae': mae, 'r2': r2}
 
     def train_from_hopsworks(self):
         try:
@@ -333,10 +331,8 @@ class MultiHorizonForecaster:
             # All values are invalid
             return {
                 'mse': np.nan, 
-                'rmse': np.nan, 
                 'mae': np.nan, 
-                'r2': -1.0, 
-                'mape': np.nan
+                'r2': -1.0
             }
         
         y_true_clean = y_true[valid_mask]
@@ -345,22 +341,18 @@ class MultiHorizonForecaster:
         # Handle constant target values (R² undefined)
         if len(np.unique(y_true_clean)) <= 1:
             mse = mean_squared_error(y_true_clean, y_pred_clean)
-            rmse = np.sqrt(mse)
             mae = mean_absolute_error(y_true_clean, y_pred_clean)
             r2 = -1.0  # Return default for constant target
-            mape = np.mean(np.abs((y_true_clean - y_pred_clean) / (y_true_clean + 1e-6))) * 100
         else:
             mse = mean_squared_error(y_true_clean, y_pred_clean)
-            rmse = np.sqrt(mse)
             mae = mean_absolute_error(y_true_clean, y_pred_clean)
             r2 = r2_score(y_true_clean, y_pred_clean)
-            mape = np.mean(np.abs((y_true_clean - y_pred_clean) / (y_true_clean + 1e-6))) * 100
         
         # Handle potential NaN in R² (shouldn't happen with valid data, but be safe)
         if np.isnan(r2) or np.isinf(r2):
             r2 = -1.0
         
-        return {'mse': mse, 'rmse': rmse, 'mae': mae, 'r2': r2, 'mape': mape}
+        return {'mse': mse, 'mae': mae, 'r2': r2}
     
     def generate_multi_horizon_predictions(self, X_latest: pd.DataFrame, horizon_results: Dict[int, Dict[str, Dict]]) -> Dict[int, Dict[str, float]]:
         """Generate predictions for all horizons"""

@@ -114,7 +114,7 @@ MODELS_CONFIG = {
 
 # Training
 TRAIN_TEST_SPLIT = 0.8
-METRICS = ['mse', 'rmse', 'mae', 'r2', 'mape']
+METRICS = ['mse', 'mae', 'r2']
 
 # Logging
 LOG_LEVEL = "INFO"

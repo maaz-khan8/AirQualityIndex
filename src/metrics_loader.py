@@ -77,8 +77,7 @@ class ModelMetricsLoader:
             model_summaries = []
             best_models = {
                 'mae': {'model': None, 'value': float('inf')},
-                'r2': {'model': None, 'value': float('-inf')},
-                'rmse': {'model': None, 'value': float('inf')}
+                'r2': {'model': None, 'value': float('-inf')}
             }
             
             for model_name, metrics_info in all_metrics.items():
@@ -91,7 +90,6 @@ class ModelMetricsLoader:
                     'training_timestamp': metrics_info.get('training_timestamp', 'unknown'),
                     'mae': metrics.get('mae', 0),
                     'r2': metrics.get('r2', 0),
-                    'rmse': metrics.get('rmse', 0),
                     'version': metrics_info.get('version', '1.0')
                 }
                 
@@ -103,9 +101,6 @@ class ModelMetricsLoader:
                 
                 if metrics.get('r2', float('-inf')) > best_models['r2']['value']:
                     best_models['r2'] = {'model': model_name, 'value': metrics.get('r2', 0)}
-                
-                if metrics.get('rmse', float('inf')) < best_models['rmse']['value']:
-                    best_models['rmse'] = {'model': model_name, 'value': metrics.get('rmse', 0)}
             
             # Sort models by R² score (descending)
             model_summaries.sort(key=lambda x: x['r2'], reverse=True)
@@ -132,7 +127,7 @@ class ModelMetricsLoader:
             df = pd.DataFrame(summary['models'])
             
             # Format numeric columns
-            numeric_cols = ['mae', 'r2', 'rmse']
+            numeric_cols = ['mae', 'r2']
             for col in numeric_cols:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -170,8 +165,7 @@ class ModelMetricsLoader:
                     'model_name': model_name,
                     'algorithm': metrics_info.get('algorithm', 'unknown'),
                     'mae': metrics.get('mae', 0),
-                    'r2': metrics.get('r2', 0),
-                    'rmse': metrics.get('rmse', 0)
+                    'r2': metrics.get('r2', 0)
                 }
                 
                 horizon_performance[horizon]['models'].append(model_perf)
