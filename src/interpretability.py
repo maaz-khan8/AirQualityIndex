@@ -323,6 +323,6 @@ def run_shap_analysis(models: Dict[str, Any], X_train: pd.DataFrame,
 if __name__ == "__main__":
     # Test SHAP availability
     if SHAP_AVAILABLE:
-        print("✅ SHAP is available and ready to use")
+        print(" SHAP is available and ready to use")
     else:
-        print("❌ SHAP not available. Install with: pip install shap")
+        print("SHAP not available. Install with: pip install shap")

@@ -94,15 +94,10 @@ class EDASnapshot:
             artifacts = self._generate_visualizations(df, report)
             report['artifacts'] = artifacts
             
-            # 7. Generate HTML Report
-            logger.info("Generating HTML report...")
-            html_path = self._generate_html_report(report)
-            report['artifacts']['html_report'] = html_path
-            
             # Save report metadata
             self._save_report_metadata(report)
             
-            logger.info(f"EDA report generated successfully: {html_path}")
+            logger.info(f"EDA report generated successfully with {len(artifacts)} visualizations")
             return report
             
         except Exception as e:
@@ -478,116 +473,6 @@ class EDASnapshot:
             logger.error(f"Missing data plot creation failed: {str(e)}")
             return None
     
-    def _generate_html_report(self, report: Dict[str, Any]) -> str:
-        """Generate HTML report"""
-        try:
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>EDA Report - {report['data_source']}</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                    .header {{ background-color: #f0f0f0; padding: 20px; border-radius: 5px; }}
-                    .section {{ margin: 20px 0; }}
-                    .metric {{ display: inline-block; margin: 10px; padding: 10px; background-color: #e8f4fd; border-radius: 5px; }}
-                    .plot {{ text-align: center; margin: 20px 0; }}
-                    .plot img {{ max-width: 100%; height: auto; }}
-                    table {{ border-collapse: collapse; width: 100%; }}
-                    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                    th {{ background-color: #f2f2f2; }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Exploratory Data Analysis Report</h1>
-                    <p><strong>Data Source:</strong> {report['data_source']}</p>
-                    <p><strong>Generated:</strong> {report['generation_timestamp']}</p>
-                    <p><strong>Analysis Period:</strong> {report['analysis_period']['start'][:10]} to {report['analysis_period']['end'][:10]}</p>
-                </div>
-                
-                <div class="section">
-                    <h2>Data Overview</h2>
-                    <div class="metric"><strong>Total Records:</strong> {report['total_records']:,}</div>
-                    <div class="metric"><strong>Total Columns:</strong> {report['total_columns']}</div>
-                    <div class="metric"><strong>Duration:</strong> {report['analysis_period']['duration_days']} days</div>
-                </div>
-            """
-            
-            # Add distribution analysis
-            if 'distributions' in report and 'error' not in report['distributions']:
-                html_content += """
-                <div class="section">
-                    <h2>Distribution Analysis</h2>
-                    <p>Key statistics for numeric variables:</p>
-                """
-                
-                for col, stats in report['distributions'].items():
-                    if isinstance(stats, dict) and 'mean' in stats:
-                        html_content += f"""
-                        <div class="metric">
-                            <strong>{col}:</strong><br>
-                            Mean: {stats['mean']:.2f}<br>
-                            Std: {stats['std']:.2f}<br>
-                            Skewness: {stats['skewness']:.2f}
-                        </div>
-                        """
-                
-                html_content += "</div>"
-            
-            # Add correlation analysis
-            if 'correlations' in report and 'aqi_correlations' in report['correlations']:
-                html_content += """
-                <div class="section">
-                    <h2>AQI Correlations</h2>
-                    <p>Variables most correlated with AQI:</p>
-                """
-                
-                aqi_corr = report['correlations']['aqi_correlations']
-                for var, corr in list(aqi_corr.items())[:5]:
-                    html_content += f"<div class='metric'><strong>{var}:</strong> {corr:.3f}</div>"
-                
-                html_content += "</div>"
-            
-            # Add visualizations
-            artifacts = report.get('artifacts', {})
-            if artifacts:
-                html_content += """
-                <div class="section">
-                    <h2>Visualizations</h2>
-                """
-                
-                for plot_name, plot_path in artifacts.items():
-                    if plot_name != 'html_report' and plot_path:
-                        plot_filename = os.path.basename(plot_path)
-                        html_content += f"""
-                        <div class="plot">
-                            <h3>{plot_name.replace('_', ' ').title()}</h3>
-                            <img src="{plot_filename}" alt="{plot_name}">
-                        </div>
-                        """
-                
-                html_content += "</div>"
-            
-            html_content += """
-                <div class="section">
-                    <h2>Report Information</h2>
-                    <p>This EDA report was automatically generated by the AQI forecasting system.</p>
-                    <p>For more details, check the dashboard or contact the data team.</p>
-                </div>
-            </body>
-            </html>
-            """
-            
-            html_path = os.path.join(self.latest_dir, 'eda_report.html')
-            with open(html_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            
-            return html_path
-            
-        except Exception as e:
-            logger.error(f"HTML report generation failed: {str(e)}")
-            return ""
     
     def _save_report_metadata(self, report: Dict[str, Any]):
         """Save report metadata"""
@@ -663,6 +548,6 @@ if __name__ == "__main__":
     # Generate EDA report
     report = eda.generate_eda_report(test_data, "test_data")
     print(f"EDA report status: {report['status']}")
-    print(f"HTML report: {report.get('artifacts', {}).get('html_report', 'Not generated')}")
+    print(f"Visualizations generated: {list(report.get('artifacts', {}).keys())}")
     
     print("✅ EDA snapshot test completed!")

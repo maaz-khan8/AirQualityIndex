@@ -21,7 +21,7 @@ from src.hopsworks_client import HopsworksClient
 
 st.set_page_config(
     page_title="AQI Forecasting Dashboard",
-    page_icon="🌍",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -114,63 +114,107 @@ def generate_multi_horizon_forecast(data):
             return None
         
         horizons = [1, 6, 12, 24, 48, 72]
-        predictions = {}
+        predictions = {h: {} for h in horizons}
 
-        # Try to load trained models
-        client = HopsworksClient()
-        models_by_name = {}
-        if client.connect():
-            models_by_name = client.load_models()
+        # Prepare features for prediction (exclude target columns)
+        from src.feature_engineering import FeatureEngineer
+        feature_engineer = FeatureEngineer()
+        
+        # Get latest data point and prepare features
+        df_latest = data.tail(1).copy()
+        
+        # Prepare features without creating target variable
+        try:
+            df_features = feature_engineer.create_features(df_latest.copy())
+            # Remove target columns if they exist
+            feature_cols = [c for c in df_features.columns 
+                          if c not in ['aqi_6h_ahead', 'aqi_ahead', 'aqi']]
+            latest_features = df_features[feature_cols].tail(1)
+        except Exception as e:
+            # Fallback: use numeric columns only
+            numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
+            numeric_cols = [c for c in numeric_cols if c != 'aqi' and not c.startswith('aqi_')]
+            latest_features = data.tail(1)[numeric_cols]
 
-        # If we have horizon-specific models saved locally (h{horizon}_model), use them
-        import os, glob, joblib
-        for horizon in horizons:
-            preds = {}
-            latest_features = _prepare_latest_features_for_horizon(data, horizon)
+        # Try to load multi-output models first (new format)
+        import os, joblib
+        multi_output_models = {}
+        for model_key in ['random_forest', 'ridge_regression']:
+            multi_path = f"models/multi_output_{model_key}_model.pkl"
+            if os.path.exists(multi_path):
+                try:
+                    multi_output_models[model_key] = joblib.load(multi_path)
+                except Exception:
+                    pass
 
-            # Prefer horizon-specific saved models
-            used = False
-            for model_key in ['random_forest', 'ridge_regression']:
-                # local horizon model path
-                local_path = f"models/h{horizon}_{model_key}_model.pkl"
-                if os.path.exists(local_path):
-                    try:
-                        mdl = joblib.load(local_path)
-                        preds[model_key] = float(mdl.predict(latest_features)[0])
-                        used = True
-                    except Exception:
-                        pass
-
-            # Fall back to general models if horizon-specific not available
-            if not used and models_by_name:
-                for key, mdl in models_by_name.items():
-                    try:
-                        preds[key.split('_')[-1]] = float(mdl.predict(latest_features)[0])
-                    except Exception:
-                        continue
-
-            # Ensure both keys are always present
-            current_aqi = data['aqi'].iloc[-1] if 'aqi' in data.columns else 50
+        # If multi-output models exist, use them (predict all horizons at once)
+        if multi_output_models:
+            # Get the horizon order from training (should match [1, 6, 12, 24, 48, 72])
+            from src.training import MultiHorizonForecaster
+            forecaster = MultiHorizonForecaster()
+            training_horizons = forecaster.horizons  # [1, 6, 12, 24, 48, 72]
             
-            # If still empty, simulate as last resort
-            if not preds:
+            for model_key, model in multi_output_models.items():
+                try:
+                    # Multi-output model returns predictions for all horizons
+                    pred_all = model.predict(latest_features)[0]  # Shape: (n_horizons,)
+                    # Map predictions to horizons (order matches training_horizons)
+                    for idx, horizon in enumerate(training_horizons):
+                        if idx < len(pred_all) and horizon in predictions:
+                            predictions[horizon][model_key] = float(pred_all[idx])
+                except Exception as e:
+                    pass
+
+        # Fallback: Try horizon-specific models (old format) if multi-output not available
+        if not any(predictions[h] for h in horizons):
+            for horizon in horizons:
+                preds = {}
+                latest_features_horizon = _prepare_latest_features_for_horizon(data, horizon)
+
+                for model_key in ['random_forest', 'ridge_regression']:
+                    local_path = f"models/h{horizon}_{model_key}_model.pkl"
+                    if os.path.exists(local_path):
+                        try:
+                            mdl = joblib.load(local_path)
+                            preds[model_key] = float(mdl.predict(latest_features_horizon)[0])
+                        except Exception:
+                            pass
+
+                # Fall back to Hopsworks models if available
+                if not preds:
+                    client = HopsworksClient()
+                    if client.connect():
+                        models_by_name = client.load_models()
+                        for key, mdl in models_by_name.items():
+                            try:
+                                preds[key.split('_')[-1]] = float(mdl.predict(latest_features_horizon)[0])
+                            except Exception:
+                                continue
+
+                predictions[horizon].update(preds)
+
+        # Ensure both keys are always present for each horizon (fallback to simulation)
+        current_aqi = data['aqi'].iloc[-1] if 'aqi' in data.columns else 50
+        
+        for horizon in horizons:
+            if not predictions[horizon]:
                 base_prediction = current_aqi + np.random.normal(0, 5)
-                preds = {
+                predictions[horizon] = {
                     'random_forest': max(0, base_prediction + np.random.normal(0, 3)),
                     'ridge_regression': max(0, base_prediction + np.random.normal(0, 3))
                 }
-            
-            # Ensure both required keys exist
-            if 'random_forest' not in preds:
-                preds['random_forest'] = current_aqi + np.random.normal(0, 3)
-            if 'ridge_regression' not in preds:
-                preds['ridge_regression'] = current_aqi + np.random.normal(0, 3)
-
-            predictions[horizon] = preds
+            else:
+                # Ensure both required keys exist
+                if 'random_forest' not in predictions[horizon]:
+                    predictions[horizon]['random_forest'] = current_aqi + np.random.normal(0, 3)
+                if 'ridge_regression' not in predictions[horizon]:
+                    predictions[horizon]['ridge_regression'] = current_aqi + np.random.normal(0, 3)
 
         return predictions
     except Exception as e:
         st.error(f"Multi-horizon forecast failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def create_aqi_gauge(value):
@@ -288,7 +332,7 @@ def create_time_series_chart(data):
 
 def display_eda_snapshot():
     """Display EDA snapshot results"""
-    st.subheader("📊 Exploratory Data Analysis")
+    st.subheader("Exploratory Data Analysis")
     st.info("Data analysis reports and visualizations")
     
     try:
@@ -304,7 +348,7 @@ def display_eda_snapshot():
             return
         
         # Display report overview
-        st.success(f"✅ Latest EDA Report: {latest_report['data_source']}")
+        st.success(f"Latest EDA Report: {latest_report['data_source']}")
         
         col1, col2, col3 = st.columns(3)
         
@@ -321,7 +365,7 @@ def display_eda_snapshot():
         if 'overview' in latest_report:
             overview = latest_report['overview']
             
-            st.subheader("📋 Data Overview")
+            st.subheader("Data Overview")
             
             col1, col2 = st.columns(2)
             
@@ -339,7 +383,7 @@ def display_eda_snapshot():
         
         # Display distribution analysis
         if 'distributions' in latest_report and 'error' not in latest_report['distributions']:
-            st.subheader("📈 Distribution Analysis")
+            st.subheader("Distribution Analysis")
             
             distributions = latest_report['distributions']
             
@@ -362,7 +406,7 @@ def display_eda_snapshot():
         
         # Display correlation analysis
         if 'correlations' in latest_report and 'aqi_correlations' in latest_report['correlations']:
-            st.subheader("🔗 AQI Correlations")
+            st.subheader("AQI Correlations")
             
             aqi_corr = latest_report['correlations']['aqi_correlations']
             
@@ -391,7 +435,7 @@ def display_eda_snapshot():
         
         # Display time series analysis
         if 'time_series' in latest_report and 'aqi' in latest_report['time_series']:
-            st.subheader("⏰ Time Series Analysis")
+            st.subheader("Time Series Analysis")
             
             ts_analysis = latest_report['time_series']['aqi']
             
@@ -404,7 +448,7 @@ def display_eda_snapshot():
                 st.metric("Daily Std Dev", f"{ts_analysis['daily_std']:.1f}")
             
             with col3:
-                trend_direction = "📈 Increasing" if ts_analysis['trend_slope'] > 0 else "📉 Decreasing"
+                trend_direction = "Increasing" if ts_analysis['trend_slope'] > 0 else "Decreasing"
                 st.metric("Trend", trend_direction)
             
             # Additional time series metrics
@@ -416,244 +460,21 @@ def display_eda_snapshot():
             with col2:
                 st.write(f"**Outliers Count:** {ts_analysis['outliers_count']}")
         
-        # Display missing data analysis
-        if 'missing_data' in latest_report:
-            st.subheader("❌ Missing Data Analysis")
-            
-            missing_data = latest_report['missing_data']
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.metric("Total Missing", f"{missing_data['total_missing']:,}")
-            
-            with col2:
-                st.metric("Missing %", f"{missing_data['missing_percentage']:.1f}%")
-            
-            # Show columns with missing data
-            if missing_data['columns_with_missing']:
-                st.write("**Columns with Missing Data:**")
-                missing_df = pd.DataFrame([
-                    {'Column': col, 'Missing Count': details['count'], 'Missing %': f"{details['percentage']:.1f}%"}
-                    for col, details in missing_data['columns_with_missing'].items()
-                ])
-                st.dataframe(missing_df, use_container_width=True)
-        
-        # Display visualizations
-        artifacts = latest_report.get('artifacts', {})
-        if artifacts:
-            st.subheader("📊 Visualizations")
-            
-            # Show available plots
-            plot_names = {
-                'distribution_plot': 'Distribution Plots',
-                'time_series_plot': 'Time Series Plots',
-                'correlation_plot': 'Correlation Heatmap',
-                'missing_data_plot': 'Missing Data Plot'
-            }
-            
-            for plot_key, plot_name in plot_names.items():
-                if plot_key in artifacts and artifacts[plot_key]:
-                    st.write(f"**{plot_name}:**")
-                    plot_filename = os.path.basename(artifacts[plot_key])
-                    st.image(artifacts[plot_key], caption=plot_name, use_column_width=True)
-        
-        # Display HTML report link
-        html_report = artifacts.get('html_report')
-        if html_report and os.path.exists(html_report):
-            st.subheader("📄 Full Report")
-            st.info(f"Complete EDA report available at: `{html_report}`")
-            
-            # Try to display HTML content inline
-            try:
-                with open(html_report, 'r', encoding='utf-8') as f:
-                    html_content = f.read()
-                st.components.v1.html(html_content, height=600, scrolling=True)
-            except Exception as e:
-                st.warning(f"Could not display HTML report inline: {str(e)}")
-        
         # Add explanation
         st.info("""
         **EDA Snapshot Information:**
         - Reports are automatically generated during pipeline execution
         - Analysis includes distributions, correlations, time series patterns, and missing data
-        - Visualizations help understand data characteristics and relationships
-        - HTML reports provide comprehensive analysis for detailed review
+        - Visualizations show data trends and characteristics in pictorial format
         """)
         
     except Exception as e:
         st.error(f"Failed to load EDA snapshot: {str(e)}")
 
 
-def display_data_validation():
-    """Display data quality validation results"""
-    st.subheader("🔍 Data Quality Validation")
-    st.info("Data quality checks and validation results")
-    
-    try:
-        # Load validation module
-        from src.validation import DataValidator
-        validator = DataValidator()
-        
-        # Get latest validation summary
-        latest_validation = validator.get_latest_validation_summary()
-        
-        if not latest_validation:
-            st.warning("No validation results found. Run the pipeline to generate validation reports.")
-            return
-        
-        # Display overall status
-        status = latest_validation.get('overall_status', 'UNKNOWN')
-        status_color = {
-            'PASS': '🟢',
-            'WARN': '🟡', 
-            'FAIL': '🔴',
-            'ERROR': '⚫'
-        }.get(status, '⚪')
-        
-        st.success(f"{status_color} Overall Status: {status}")
-        
-        # Display basic info
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("Total Records", latest_validation.get('total_records', 0))
-        
-        with col2:
-            st.metric("Total Columns", latest_validation.get('total_columns', 0))
-        
-        with col3:
-            st.metric("Data Source", latest_validation.get('data_source', 'Unknown'))
-        
-        # Display validation details
-        st.subheader("📋 Validation Details")
-        
-        # Schema validation
-        schema_check = latest_validation.get('schema_check', {})
-        if schema_check:
-            with st.expander("🔧 Schema Validation"):
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.write(f"**Status:** {schema_check.get('status', 'Unknown')}")
-                    st.write(f"**Column Count:** {schema_check.get('column_count', 0)}")
-                
-                with col2:
-                    missing_cols = schema_check.get('missing_columns', [])
-                    extra_cols = schema_check.get('extra_columns', [])
-                    
-                    if missing_cols:
-                        st.write(f"**Missing Columns:** {', '.join(missing_cols)}")
-                    if extra_cols:
-                        st.write(f"**Extra Columns:** {', '.join(extra_cols)}")
-                
-                type_mismatches = schema_check.get('type_mismatches', [])
-                if type_mismatches:
-                    st.write("**Type Mismatches:**")
-                    for mismatch in type_mismatches:
-                        st.write(f"- {mismatch['column']}: expected {mismatch['expected']}, got {mismatch['actual']}")
-        
-        # Range validation
-        range_check = latest_validation.get('range_check', {})
-        if range_check:
-            with st.expander("📊 Range Validation"):
-                st.write(f"**Status:** {range_check.get('status', 'Unknown')}")
-                st.write(f"**Total Violations:** {range_check.get('total_violations', 0)}")
-                
-                out_of_range = range_check.get('out_of_range', {})
-                if out_of_range:
-                    st.write("**Out of Range Values:**")
-                    for col, details in out_of_range.items():
-                        st.write(f"- **{col}:** {details['violations']} violations ({details['violation_percentage']:.1f}%)")
-                        st.write(f"  Range: {details['min_valid']}-{details['max_valid']}, Actual: {details['min_actual']:.1f}-{details['max_actual']:.1f}")
-        
-        # Null validation
-        null_check = latest_validation.get('null_check', {})
-        if null_check:
-            with st.expander("❌ Null Value Validation"):
-                st.write(f"**Status:** {null_check.get('status', 'Unknown')}")
-                st.write(f"**Total Nulls:** {null_check.get('total_nulls', 0)}")
-                
-                critical_nulls = null_check.get('critical_nulls', {})
-                if critical_nulls:
-                    st.write("**Critical Column Nulls:**")
-                    for col, details in critical_nulls.items():
-                        st.write(f"- **{col}:** {details['count']} nulls ({details['percentage']:.1f}%)")
-                
-                # Show null percentage chart
-                null_counts = null_check.get('null_counts', {})
-                if null_counts:
-                    null_df = pd.DataFrame([
-                        {'Column': col, 'Null Percentage': details['percentage']}
-                        for col, details in null_counts.items()
-                        if details['percentage'] > 0
-                    ])
-                    
-                    if not null_df.empty:
-                        fig = px.bar(
-                            null_df, 
-                            x='Column', 
-                            y='Null Percentage',
-                            title="Null Value Percentage by Column"
-                        )
-                        fig.update_layout(height=400, xaxis_tickangle=-45)
-                        st.plotly_chart(fig, use_container_width=True)
-        
-        # Freshness validation
-        freshness_check = latest_validation.get('freshness_check', {})
-        if freshness_check:
-            with st.expander("⏰ Data Freshness"):
-                st.write(f"**Status:** {freshness_check.get('status', 'Unknown')}")
-                
-                latest_timestamp = freshness_check.get('latest_timestamp')
-                oldest_timestamp = freshness_check.get('oldest_timestamp')
-                data_age_hours = freshness_check.get('data_age_hours')
-                
-                if latest_timestamp:
-                    st.write(f"**Latest Data:** {latest_timestamp[:19]}")
-                if oldest_timestamp:
-                    st.write(f"**Oldest Data:** {oldest_timestamp[:19]}")
-                if data_age_hours is not None:
-                    st.write(f"**Data Age:** {data_age_hours:.1f} hours")
-                
-                time_gaps = freshness_check.get('time_gaps', [])
-                if time_gaps:
-                    st.write(f"**Time Gaps:** {len(time_gaps)} gaps detected")
-                    for gap in time_gaps[:5]:  # Show first 5 gaps
-                        st.write(f"- {gap['gap_start'][:19]} to {gap['gap_end'][:19]} ({gap['gap_hours']:.1f}h)")
-        
-        # Display issues and recommendations
-        issues = latest_validation.get('issues', [])
-        recommendations = latest_validation.get('recommendations', [])
-        
-        if issues:
-            st.subheader("⚠️ Issues Detected")
-            for issue in issues:
-                st.warning(f"• {issue}")
-        
-        if recommendations:
-            st.subheader("💡 Recommendations")
-            for rec in recommendations:
-                st.info(f"• {rec}")
-        
-        # Add explanation
-        st.info("""
-        **Data Quality Validation Information:**
-        - **PASS**: All validations passed successfully
-        - **WARN**: Non-critical issues detected, data can be processed
-        - **FAIL**: Critical issues detected, data should not be processed
-        - **ERROR**: Validation process failed
-        
-        Validation checks include schema, ranges, null values, and data freshness.
-        """)
-        
-    except Exception as e:
-        st.error(f"Failed to load validation results: {str(e)}")
-
-
 def display_model_metrics():
     """Display model registry metrics"""
-    st.subheader("📊 Model Registry Metrics")
+    st.subheader("Model Registry Metrics")
     st.info("Performance metrics and model comparisons")
     
     try:
@@ -668,12 +489,12 @@ def display_model_metrics():
             st.warning("No model metrics found. Run the pipeline to generate model metrics.")
             return
         
-        st.success(f"✅ {summary['summary']}")
+        st.success(f"{summary['summary']}")
         
         # Display best models
         best_models = summary.get('best_models', {})
         if best_models:
-            st.subheader("🏆 Best Performing Models")
+            st.subheader("Best Performing Models")
             
             col1, col2, col3 = st.columns(3)
             
@@ -702,7 +523,7 @@ def display_model_metrics():
                     )
         
         # Display model comparison table
-        st.subheader("📋 Model Comparison")
+        st.subheader("Model Comparison")
         df = loader.get_model_comparison_dataframe()
         
         if df is not None and not df.empty:
@@ -723,7 +544,7 @@ def display_model_metrics():
             st.dataframe(display_df, use_container_width=True)
             
             # Create performance charts
-            st.subheader("📈 Performance Visualization")
+            st.subheader("Performance Visualization")
             
             # R² Score comparison
             fig_r2 = px.bar(
@@ -750,7 +571,7 @@ def display_model_metrics():
         # Display horizon performance
         horizon_perf = loader.get_horizon_performance()
         if horizon_perf:
-            st.subheader("⏰ Performance by Horizon")
+            st.subheader("Performance by Horizon")
             
             horizon_data = []
             for horizon, data in horizon_perf.items():
@@ -778,30 +599,6 @@ def display_model_metrics():
                 fig_horizon.update_layout(height=400)
                 st.plotly_chart(fig_horizon, use_container_width=True)
         
-        # Display latest model versions
-        latest_models = loader.get_latest_model_versions()
-        if latest_models:
-            st.subheader("🔄 Latest Model Versions")
-            
-            for algorithm, model_info in latest_models.items():
-                with st.expander(f"Latest {algorithm.title()} Model"):
-                    metrics_info = model_info['metrics_info']
-                    metrics = metrics_info.get('metrics', {})
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write(f"**Model:** {model_info['model_name']}")
-                        st.write(f"**Algorithm:** {algorithm.title()}")
-                        st.write(f"**Horizon:** {metrics_info.get('horizon', 'N/A')}")
-                        st.write(f"**Version:** {metrics_info.get('version', '1.0')}")
-                    
-                    with col2:
-                        st.write(f"**R² Score:** {metrics.get('r2', 0):.4f}")
-                        st.write(f"**MAE:** {metrics.get('mae', 0):.4f}")
-                        st.write(f"**RMSE:** {metrics.get('rmse', 0):.4f}")
-                        st.write(f"**Trained:** {model_info['training_timestamp'][:19]}")
-        
         # Add explanation
         st.info("""
         **Model Registry Metrics Information:**
@@ -818,7 +615,7 @@ def display_model_metrics():
 
 def display_alert_panel():
     """Display AQI alert panel"""
-    st.subheader("🚨 AQI Alert System")
+    st.subheader("AQI Alert System")
     
     # Check if alert data exists
     alerts_dir = "alerts"
@@ -835,7 +632,7 @@ def display_alert_panel():
         summary = alert_system.get_alert_summary(24)
         
         if summary.get('total_alerts', 0) == 0:
-            st.success("✅ No alerts in the last 24 hours - Air quality is good!")
+            st.success("No alerts in the last 24 hours - Air quality is good!")
         else:
             # Display alert summary
             col1, col2, col3 = st.columns(3)
@@ -857,7 +654,7 @@ def display_alert_panel():
             
             # Display severity breakdown
             if severity_counts:
-                st.subheader("📊 Alert Severity Breakdown")
+                st.subheader("Alert Severity Breakdown")
                 
                 # Create severity chart
                 severity_df = pd.DataFrame([
@@ -886,23 +683,14 @@ def display_alert_panel():
             # Display recent alerts
             recent_alerts = alert_system.get_recent_alerts(24)
             if recent_alerts:
-                st.subheader("🔔 Recent Alerts")
+                st.subheader("Recent Alerts")
                 
                 # Show only last 10 alerts
                 display_alerts = recent_alerts[:10]
                 
                 for alert in display_alerts:
                     # Determine alert color based on severity
-                    severity_colors = {
-                        'low': '🟢',
-                        'moderate': '🟡', 
-                        'high': '🟠',
-                        'critical': '🔴'
-                    }
-                    
-                    severity_icon = severity_colors.get(alert['severity'], '⚪')
-                    
-                    with st.expander(f"{severity_icon} {alert['message']} - {alert['timestamp'][:19]}"):
+                    with st.expander(f"{alert['message']} - {alert['timestamp'][:19]}"):
                         col1, col2 = st.columns(2)
                         
                         with col1:
@@ -917,7 +705,7 @@ def display_alert_panel():
                                 st.write(f"• {rec}")
         
         # Display alert thresholds
-        st.subheader("📋 Alert Thresholds")
+        st.subheader("Alert Thresholds")
         threshold_data = {
             'Severity': ['Low', 'Moderate', 'High', 'Critical'],
             'AQI Range': ['51-100', '101-150', '151-200', '200+'],
@@ -947,7 +735,7 @@ def display_alert_panel():
 
 def display_shap_analysis():
     """Display SHAP model interpretability analysis"""
-    st.subheader("🔍 Model Explainability with SHAP")
+    st.subheader("Model Explainability with SHAP")
     st.info("Understanding which features drive AQI predictions")
     
     # Check if SHAP artifacts exist
@@ -966,12 +754,12 @@ def display_shap_analysis():
         with open(summary_file, 'r') as f:
             shap_summary = json.load(f)
         
-        st.success(f"✅ SHAP analysis completed on {shap_summary['analysis_timestamp']}")
+        st.success(f"SHAP analysis completed on {shap_summary['analysis_timestamp']}")
         st.info(f"Models analyzed: {', '.join(shap_summary['models_analyzed'])}")
         
         # Display results for each model
         for model_name in shap_summary['models_analyzed']:
-            st.subheader(f"📊 {model_name.replace('_', ' ').title()} Model")
+            st.subheader(f"{model_name.replace('_', ' ').title()} Model")
             
             # Load model-specific results
             model_results = shap_summary['results'].get(model_name, {})
@@ -1022,7 +810,7 @@ def display_shap_analysis():
             st.divider()
         
         # Add explanation
-        st.subheader("📚 Understanding SHAP Values")
+        st.subheader("Understanding SHAP Values")
         st.markdown("""
         **SHAP (SHapley Additive exPlanations)** helps explain model predictions by:
         
@@ -1043,7 +831,7 @@ def display_shap_analysis():
 def main():
     """Main dashboard function"""
     # Header
-    st.markdown('<h1 class="main-header">🌍 Air Quality Index - Multi-Horizon Forecasting</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">Air Quality Index - Multi-Horizon Forecasting</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Real-time AQI predictions with 3-day ahead forecasting</p>', unsafe_allow_html=True)
     
     # Load data
@@ -1057,7 +845,7 @@ def main():
         return
     
     # Sidebar
-    st.sidebar.header("📊 Dashboard Controls")
+    st.sidebar.header("Dashboard Controls")
     
     # Time range selector
     if 'datetime' in data.columns:
@@ -1092,7 +880,7 @@ def main():
         st.metric("Data Points", len(data))
     
     # AQI Gauge
-    st.subheader("🎯 Current Air Quality Status")
+    st.subheader("Current Air Quality Status")
     gauge_fig = create_aqi_gauge(current_aqi)
     st.plotly_chart(gauge_fig, use_container_width=True)
     
@@ -1102,27 +890,25 @@ def main():
     # Model Registry Metrics
     display_model_metrics()
     
-    # Data Quality Validation
-    display_data_validation()
     
     # EDA Snapshot
     display_eda_snapshot()
     
     # Time Series Chart
-    st.subheader("📈 Air Quality Trends")
+    st.subheader("Air Quality Trends")
     time_series_fig = create_time_series_chart(data)
     if time_series_fig:
         st.plotly_chart(time_series_fig, use_container_width=True)
     
     # Multi-Horizon Forecast
-    st.subheader("🔮 Multi-Horizon Forecast (3-Day Ahead)")
+    st.subheader("Multi-Horizon Forecast (3-Day Ahead)")
     
     # Generate multi-horizon predictions
     multi_horizon_predictions = generate_multi_horizon_forecast(data)
     
     if multi_horizon_predictions:
         # Create tabs for different horizons and interpretability
-        tab1, tab2, tab3, tab4, tab5, tab6, tab_shap = st.tabs(["1h", "6h", "12h", "24h", "48h", "72h", "🔍 Model Explainability"])
+        tab1, tab2, tab3, tab4, tab5, tab6, tab_shap = st.tabs(["1h", "6h", "12h", "24h", "48h", "72h", "Model Explainability"])
         
         with tab1:
             st.metric("1-Hour Ahead", f"{multi_horizon_predictions[1]['random_forest']:.1f}")
@@ -1152,7 +938,7 @@ def main():
             display_shap_analysis()
         
         # Model comparison chart
-        st.subheader("📊 Model Comparison Across Horizons")
+        st.subheader("Model Comparison Across Horizons")
         
         # Prepare data for comparison chart
         horizons = list(multi_horizon_predictions.keys())
@@ -1181,37 +967,6 @@ def main():
     
     else:
         st.warning("Multi-horizon predictions not available. Run: `python -m src.main setup`")
-    
-    # Project Summary
-    st.subheader("📋 Project Summary")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.info("""
-        **🎯 Features:**
-        - Multi-horizon forecasting (1h-72h)
-        - Random Forest & Ridge Regression
-        - Real-time AQI monitoring
-        - Hopsworks integration
-        """)
-    
-    with col2:
-        st.info("""
-        **📊 Models:**
-        - Random Forest
-        - Ridge Regression
-        - 138 engineered features
-        - Automated retraining
-        """)
-    
-    with col3:
-        st.info("""
-        **🚀 Commands:**
-        - `python -m src.main setup` - Initial setup
-        - `python -m src.main update` - Daily updates
-        - `python -m src.main dashboard` - This dashboard
-        """)
 
 if __name__ == "__main__":
     main()

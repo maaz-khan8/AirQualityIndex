@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
+from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import logging
 from datetime import datetime
@@ -173,116 +174,160 @@ def train_from_hopsworks():
 
 class MultiHorizonForecaster:
     """
-    Multi-horizon forecasting for 3-day ahead AQI predictions
+    Multi-horizon forecasting for 3-day ahead AQI predictions using Multi-Output Regression
     Supports multiple time horizons: 1h, 6h, 12h, 24h, 48h, 72h
+    Uses a single model that predicts all horizons simultaneously
     """
     
     def __init__(self):
-        self.horizon_models = {}
+        self.models = {}  # Changed from horizon_models to just models
         self.horizons = config.FORECAST_HORIZONS
         self.feature_names = []
         
-        # Initialize models for each horizon
-        for horizon in self.horizons:
-            self.horizon_models[horizon] = {}
-            for name, params in config.MODELS_CONFIG.items():
-                if name == 'random_forest':
-                    self.horizon_models[horizon][name] = RandomForestRegressor(**params)
-                elif name == 'ridge_regression':
-                    self.horizon_models[horizon][name] = Ridge(**params)
+        # Initialize multi-output models (one per algorithm, outputs all 6 horizons)
+        for name, params in config.MODELS_CONFIG.items():
+            if name == 'random_forest':
+                base_model = RandomForestRegressor(**params)
+                self.models[name] = MultiOutputRegressor(base_model)
+            elif name == 'ridge_regression':
+                base_model = Ridge(**params)
+                self.models[name] = MultiOutputRegressor(base_model)
     
-    def prepare_multi_horizon_data(self, df: pd.DataFrame) -> Dict[int, Tuple[pd.DataFrame, pd.Series]]:
-        """Prepare data for multiple forecasting horizons"""
+    def prepare_multi_horizon_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Prepare data for multi-output regression (all horizons simultaneously)
+        Returns: (X, Y) where Y has shape (n_samples, n_horizons)
+        """
         try:
-            horizon_data = {}
+            logger.info("Preparing multi-output data for all horizons...")
             
+            # Create target variables for all horizons
+            df_work = df.copy()
+            
+            # Create all horizon targets
+            Y_columns = {}
             for horizon in self.horizons:
-                logger.info(f"Preparing data for {horizon}-hour horizon...")
-                
-                # Create target variable for this horizon
-                df_horizon = df.copy()
-                df_horizon['target'] = df_horizon['aqi'].shift(-horizon)
-                
-                # Remove rows with NaN targets (last 'horizon' rows)
-                df_horizon = df_horizon.dropna(subset=['target'])
-                
-                if len(df_horizon) < 100:  # Minimum data requirement
-                    logger.warning(f"Insufficient data for {horizon}-hour horizon: {len(df_horizon)} samples")
-                    continue
-                
-                # Prepare features and target
-                feature_columns = [col for col in df_horizon.columns if col not in ['target', 'aqi']]
-                X = df_horizon[feature_columns]
-                y = df_horizon['target']
-                
-                # Store feature names (same for all horizons)
-                if not self.feature_names:
-                    self.feature_names = feature_columns
-                
-                horizon_data[horizon] = (X, y)
-                logger.info(f"Prepared {len(X)} samples for {horizon}-hour horizon")
+                Y_columns[horizon] = df_work['aqi'].shift(-horizon)
             
-            return horizon_data
+            # Combine into DataFrame (columns will be horizon indices)
+            Y_df = pd.DataFrame(Y_columns)
+            
+            # Align with original dataframe
+            df_work = pd.concat([df_work, Y_df], axis=1)
+            
+            # Remove rows with NaN targets (need to drop last max(horizons) rows)
+            max_horizon = max(self.horizons)
+            df_work = df_work.iloc[:-max_horizon] if max_horizon > 0 else df_work
+            df_work = df_work.dropna(subset=list(self.horizons))
+            
+            if len(df_work) < 100:  # Minimum data requirement
+                logger.warning(f"Insufficient data for multi-horizon: {len(df_work)} samples")
+                return None, None
+            
+            # Prepare features
+            # Exclude target, direct AQI, and non-lagged AQI features to prevent leakage
+            numeric_features = df_work.select_dtypes(include=[np.number]).columns.tolist()
+            feature_columns = [
+                c for c in numeric_features
+                if c not in self.horizons and c != 'aqi' and c != 'aqi_6h_ahead' 
+                and not (c.startswith('aqi_') and not c.startswith('aqi_lag_'))
+            ]
+            
+            X = df_work[feature_columns]
+            # Y should have columns in the same order as self.horizons
+            Y = df_work[self.horizons]
+            
+            # Store feature names
+            if not self.feature_names:
+                self.feature_names = feature_columns
+            
+            logger.info(f"Prepared {len(X)} samples with {len(self.horizons)} horizon targets")
+            logger.info(f"Feature shape: {X.shape}, Target shape: {Y.shape}")
+            
+            return X, Y
             
         except Exception as e:
             logger.error(f"Failed to prepare multi-horizon data: {str(e)}")
-            return {}
+            import traceback
+            traceback.print_exc()
+            return None, None
     
-    def train_multi_horizon_models(self, horizon_data: Dict[int, Tuple[pd.DataFrame, pd.Series]]) -> Dict[int, Dict[str, Dict]]:
-        """Train models for all horizons"""
+    def train_multi_horizon_models(self, X: pd.DataFrame, Y: pd.DataFrame) -> Dict[str, Dict]:
+        """
+        Train multi-output models (one per algorithm, predicts all horizons)
+        Returns: Dict with model_name -> {model, metrics_by_horizon, ...}
+        """
         try:
+            if X is None or Y is None or X.empty or Y.empty:
+                logger.error("Invalid input data for multi-horizon training")
+                return {}
+            
+            # Filter numeric columns only
+            numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
+            X_numeric = X[numeric_features]
+            
+            # Chronological split
+            split_idx = int(len(X_numeric) * config.TRAIN_TEST_SPLIT)
+            X_train, X_test = X_numeric.iloc[:split_idx], X_numeric.iloc[split_idx:]
+            Y_train, Y_test = Y.iloc[:split_idx], Y.iloc[split_idx:]
+            
+            logger.info(f"Training multi-output models on {len(X_train)} train samples, {len(X_test)} test samples")
+            
             results = {}
             
-            for horizon, (X, y) in horizon_data.items():
-                logger.info(f"Training models for {horizon}-hour horizon...")
-                
-                # Filter numeric columns only
-                numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
-                X_numeric = X[numeric_features]
-                
-                # Split data
-                split_idx = int(len(X_numeric) * config.TRAIN_TEST_SPLIT)
-                X_train, X_test = X_numeric.iloc[:split_idx], X_numeric.iloc[split_idx:]
-                y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
-                
-                horizon_results = {}
-                
-                # Train each model for this horizon
-                for model_name, model in self.horizon_models[horizon].items():
-                    try:
-                        logger.info(f"Training {model_name} for {horizon}-hour horizon...")
+            # Train each multi-output model
+            for model_name, model in self.models.items():
+                try:
+                    logger.info(f"Training {model_name} multi-output model for all horizons...")
+                    
+                    # Train model (predicts all horizons at once)
+                    model.fit(X_train, Y_train)
+                    
+                    # Make predictions (shape: n_samples x n_horizons)
+                    Y_train_pred = model.predict(X_train)
+                    Y_test_pred = model.predict(X_test)
+                    
+                    # Calculate metrics for each horizon
+                    train_metrics_by_horizon = {}
+                    test_metrics_by_horizon = {}
+                    
+                    for idx, horizon in enumerate(self.horizons):
+                        y_train_true = Y_train.iloc[:, idx]
+                        y_train_pred = Y_train_pred[:, idx]
+                        y_test_true = Y_test.iloc[:, idx]
+                        y_test_pred = Y_test_pred[:, idx]
                         
-                        # Train model
-                        model.fit(X_train, y_train)
+                        train_metrics = self._calculate_metrics(y_train_true, y_train_pred)
+                        test_metrics = self._calculate_metrics(y_test_true, y_test_pred)
                         
-                        # Make predictions
-                        y_train_pred = model.predict(X_train)
-                        y_test_pred = model.predict(X_test)
+                        train_metrics_by_horizon[horizon] = train_metrics
+                        test_metrics_by_horizon[horizon] = test_metrics
                         
-                        # Calculate metrics
-                        train_metrics = self._calculate_metrics(y_train, y_train_pred)
-                        test_metrics = self._calculate_metrics(y_test, y_test_pred)
-                        
-                        horizon_results[model_name] = {
-                            'model': model,
-                            'train_metrics': train_metrics,
-                            'test_metrics': test_metrics,
-                            'train_samples': len(X_train),
-                            'test_samples': len(X_test)
-                        }
-                        
-                        logger.info(f"{model_name} for {horizon}h - Test R²: {test_metrics['r2']:.3f}, MAE: {test_metrics['mae']:.3f}")
-                        
-                    except Exception as e:
-                        logger.error(f"Failed to train {model_name} for {horizon}h: {str(e)}")
-                        continue
-                
-                results[horizon] = horizon_results
+                        logger.info(f"  {horizon}h horizon - Test R²: {test_metrics['r2']:.3f}, MAE: {test_metrics['mae']:.3f}")
+                    
+                    results[model_name] = {
+                        'model': model,
+                        'train_metrics_by_horizon': train_metrics_by_horizon,
+                        'test_metrics_by_horizon': test_metrics_by_horizon,
+                        'train_samples': len(X_train),
+                        'test_samples': len(X_test),
+                        'horizons': self.horizons
+                    }
+                    
+                    logger.info(f"{model_name} multi-output model trained successfully")
+                    
+                except Exception as e:
+                    logger.error(f"Failed to train {model_name} multi-output model: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    continue
             
             return results
             
         except Exception as e:
             logger.error(f"Failed to train multi-horizon models: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {}
     
     def _calculate_metrics(self, y_true, y_pred):
