@@ -1,11 +1,7 @@
-"""
-Unified Pipeline for Air Quality Index Forecasting
-Handles setup, updates, alerts, and interpretability in one place
-"""
-
 import pandas as pd
 import numpy as np
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 import config
@@ -104,30 +100,15 @@ class UnifiedPipeline:
             
             logger.info(f"Fetched {len(df)} records for initial setup")
             
-            # Step 2: Validate data quality
-            logger.info("Validating data quality...")
-            from src.validation import DataValidator
-            validator = DataValidator()
-            validation_results = validator.validate_data(df, "initial_setup")
-            
-            if validation_results['overall_status'] == 'FAIL':
-                logger.error("Data validation failed - critical issues detected")
-                logger.error(f"Validation issues: {validation_results.get('issues', [])}")
-                return False
-            elif validation_results['overall_status'] == 'WARN':
-                logger.warning("Data validation warnings detected")
-                logger.warning(f"Validation issues: {validation_results.get('issues', [])}")
-            
-            logger.info(f"Data validation completed: {validation_results['overall_status']}")
-            
-            # Step 3: Generate EDA snapshot
+            # Step 2: Generate EDA snapshot
             logger.info("Generating EDA snapshot...")
             from src.eda import EDASnapshot
             eda = EDASnapshot()
             eda_results = eda.generate_eda_report(df, "initial_setup")
             
             if eda_results['status'] == 'SUCCESS':
-                logger.info(f"EDA snapshot generated: {eda_results.get('artifacts', {}).get('html_report', 'Unknown')}")
+                artifacts_count = len(eda_results.get('artifacts', {}))
+                logger.info(f"EDA snapshot generated with {artifacts_count} visualizations")
             else:
                 logger.warning(f"EDA snapshot generation failed: {eda_results.get('error', 'Unknown error')}")
             
@@ -153,115 +134,58 @@ class UnifiedPipeline:
                 logger.error("Failed to upload data to Hopsworks")
                 return False
             
-            # Step 5: Train models
-            logger.info("Training models...")
-            
-            # Prepare training data for 6h ahead target (avoid leakage)
-            # Use 'aqi_6h_ahead' as target and exclude non-lagged AQI-derived features
-            numeric_features = df_features.select_dtypes(include=[np.number]).columns.tolist()
-            # Exclude target and direct AQI columns; keep only lag-based AQI features
-            numeric_features = [
-                c for c in numeric_features
-                if c != 'aqi_6h_ahead' and c != 'aqi' and not (c.startswith('aqi_') and not c.startswith('aqi_lag_'))
-            ]
-            
-            X_all = df_features[numeric_features]
-            y_all = df_features['aqi_6h_ahead']
-            
-            # Chronological split to avoid leakage
-            split_idx = int(len(X_all) * config.TRAIN_TEST_SPLIT)
-            X_train, X_test = X_all.iloc[:split_idx], X_all.iloc[split_idx:]
-            y_train, y_test = y_all.iloc[:split_idx], y_all.iloc[split_idx:]
-            
-            self.forecaster.train_from_dataframe(
-                X_train=X_train,
-                X_test=X_test,
-                y_train=y_train,
-                y_test=y_test
-            )
-            
-            # Step 6: Save models to Hopsworks
-            logger.info("Saving models to Hopsworks...")
-            import joblib
-            import os
-            
-            for name, model in self.forecaster.models.items():
-                metrics = self.forecaster.results[name]['test_metrics']
-                
-                # Save model to file first
-                model_path = f"models/{name}_model.pkl"
-                os.makedirs("models", exist_ok=True)
-                joblib.dump(model, model_path)
-                
-                # Save metrics as sidecar JSON file
-                metrics_path = f"models/{name}_metrics.json"
-                import json
-                with open(metrics_path, 'w') as f:
-                    json.dump({
-                        'model_name': name,
-                        'metrics': metrics,
-                        'training_timestamp': datetime.now().isoformat(),
-                        'model_path': model_path,
-                        'version': '1.0'
-                    }, f, indent=2)
-                
-                logger.info(f"Saved metrics for {name} to {metrics_path}")
-                
-                # Create enhanced description with metrics reference
-                description = f"Initial setup for {name} model. Metrics: {metrics_path}"
-                
-                # Save to Hopsworks
-                self.client.save_model(
-                    model=model_path,
-                    model_name=f"{config.HOPSWORKS_MODEL_NAME}_{name}",
-                    metrics=metrics,
-                    description=description
-                )
-            
-            # Step 7: Train multi-horizon models
-            logger.info("Training multi-horizon models...")
-            horizon_data = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_features)
-            if horizon_data:
-                horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(horizon_data)
+            # Step 5: Train multi-output models (for all horizons)
+            logger.info("Training multi-output models for all horizons...")
+            X_multi, Y_multi = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_features)
+            if X_multi is not None and Y_multi is not None:
+                horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(X_multi, Y_multi)
                 # Save multi-horizon models locally and to Hopsworks
                 try:
                     import joblib, os
                     os.makedirs("models", exist_ok=True)
-                    for horizon, results in horizon_results.items():
-                        for name, result in results.items():
-                            model = result['model']
-                            metrics = result['test_metrics']
-                            model_path = f"models/h{horizon}_{name}_model.pkl"
-                            joblib.dump(model, model_path)
-                            
-                            # Save metrics as sidecar JSON file
-                            metrics_path = f"models/h{horizon}_{name}_metrics.json"
-                            with open(metrics_path, 'w') as f:
-                                json.dump({
-                                    'model_name': f"h{horizon}_{name}",
-                                    'horizon': horizon,
-                                    'algorithm': name,
-                                    'metrics': metrics,
-                                    'training_timestamp': datetime.now().isoformat(),
-                                    'model_path': model_path,
-                                    'version': '1.0'
-                                }, f, indent=2)
-                            
-                            logger.info(f"Saved metrics for h{horizon}_{name} to {metrics_path}")
-                            
-                            # Create enhanced description with metrics reference
-                            description = f"{horizon}-hour AQI forecasting model using {name}. Metrics: {metrics_path}"
-                            
-                            self.client.save_model(
-                                model=model_path,
-                                model_name=f"{config.HOPSWORKS_MODEL_NAME}_h{horizon}_{name}",
-                                metrics=metrics,
-                                description=description
-                            )
+                    
+                    # Multi-output models: one model per algorithm (not per horizon)
+                    for model_name, result in horizon_results.items():
+                        model = result['model']
+                        test_metrics_by_horizon = result['test_metrics_by_horizon']
+                        
+                        # Save the multi-output model (predicts all horizons)
+                        model_path = f"models/multi_output_{model_name}_model.pkl"
+                        joblib.dump(model, model_path)
+                        logger.info(f"Saved multi-output {model_name} model to {model_path}")
+                        
+                        # Save metrics for each horizon
+                        for horizon in result['horizons']:
+                            if horizon in test_metrics_by_horizon:
+                                metrics = test_metrics_by_horizon[horizon]
+                                metrics_path = f"models/multi_output_{model_name}_h{horizon}_metrics.json"
+                                with open(metrics_path, 'w') as f:
+                                    json.dump({
+                                        'model_name': f"multi_output_{model_name}",
+                                        'horizon': horizon,
+                                        'algorithm': model_name,
+                                        'metrics': metrics,
+                                        'training_timestamp': datetime.now().isoformat(),
+                                        'model_path': model_path,
+                                        'version': '1.0'
+                                    }, f, indent=2)
+                                
+                                logger.info(f"Saved metrics for {model_name} {horizon}h to {metrics_path}")
+                        
+                        # Save aggregate metrics to Hopsworks (using 6h horizon as representative)
+                        representative_metrics = test_metrics_by_horizon.get(6, test_metrics_by_horizon[list(test_metrics_by_horizon.keys())[0]])
+                        description = f"Multi-output AQI forecasting model ({model_name}) for all horizons: {result['horizons']}"
+                        
+                        self.client.save_model(
+                            model=model_path,
+                            model_name=f"{config.HOPSWORKS_MODEL_NAME}_multi_output_{model_name}",
+                            metrics=representative_metrics,
+                            description=description
+                        )
                 except Exception as e:
                     logger.error(f"Failed to save multi-horizon models: {str(e)}")
             
-            # Step 8: Run alerts and interpretability
+            # Step 7: Run alerts and interpretability
             logger.info("Running alert system...")
             self.run_alert_system()
             
@@ -301,30 +225,15 @@ class UnifiedPipeline:
             
             logger.info(f"Fetched {len(df_new)} new records")
             
-            # Step 2: Validate new data quality
-            logger.info("Validating new data quality...")
-            from src.validation import DataValidator
-            validator = DataValidator()
-            validation_results = validator.validate_data(df_new, "daily_update")
-            
-            if validation_results['overall_status'] == 'FAIL':
-                logger.error("New data validation failed - critical issues detected")
-                logger.error(f"Validation issues: {validation_results.get('issues', [])}")
-                return False
-            elif validation_results['overall_status'] == 'WARN':
-                logger.warning("New data validation warnings detected")
-                logger.warning(f"Validation issues: {validation_results.get('issues', [])}")
-            
-            logger.info(f"New data validation completed: {validation_results['overall_status']}")
-            
-            # Step 3: Generate EDA snapshot for new data
+            # Step 2: Generate EDA snapshot for new data
             logger.info("Generating EDA snapshot for new data...")
             from src.eda import EDASnapshot
             eda = EDASnapshot()
             eda_results = eda.generate_eda_report(df_new, "daily_update")
             
             if eda_results['status'] == 'SUCCESS':
-                logger.info(f"EDA snapshot generated: {eda_results.get('artifacts', {}).get('html_report', 'Unknown')}")
+                artifacts_count = len(eda_results.get('artifacts', {}))
+                logger.info(f"EDA snapshot generated with {artifacts_count} visualizations")
             else:
                 logger.warning(f"EDA snapshot generation failed: {eda_results.get('error', 'Unknown error')}")
             
@@ -352,8 +261,8 @@ class UnifiedPipeline:
             
             logger.info(f"Successfully appended {len(df_new_features)} records to Hopsworks")
             
-            # Step 5: Get updated data and retrain models
-            logger.info("Retraining models with updated data...")
+            # Step 5: Get updated data and retrain multi-output models
+            logger.info("Retraining multi-output models with updated data...")
             df_updated = self.client.get_feature_data()
             
             if df_updated is None or df_updated.empty:
@@ -362,83 +271,52 @@ class UnifiedPipeline:
             
             logger.info(f"Retraining with {len(df_updated)} total records")
             
-            # Retrain models with chronological split and 6h ahead target
-            numeric_features = df_updated.select_dtypes(include=[np.number]).columns.tolist()
-            numeric_features = [
-                c for c in numeric_features
-                if c != 'aqi_6h_ahead' and c != 'aqi' and not (c.startswith('aqi_') and not c.startswith('aqi_lag_'))
-            ]
-            
-            X_all = df_updated[numeric_features]
-            y_all = df_updated['aqi_6h_ahead']
-            
-            split_idx = int(len(X_all) * config.TRAIN_TEST_SPLIT)
-            X_train, X_test = X_all.iloc[:split_idx], X_all.iloc[split_idx:]
-            y_train, y_test = y_all.iloc[:split_idx], y_all.iloc[split_idx:]
-            
-            self.forecaster.train_from_dataframe(
-                X_train=X_train,
-                X_test=X_test,
-                y_train=y_train,
-                y_test=y_test
-            )
-            
-            # Save updated models
-            import joblib
-            import os
-            
-            for name, model in self.forecaster.models.items():
-                metrics = self.forecaster.results[name]['test_metrics']
-                
-                # Save model to file first
-                model_path = f"models/{name}_model.pkl"
-                os.makedirs("models", exist_ok=True)
-                joblib.dump(model, model_path)
-                
-                # Save metrics as sidecar JSON file
-                metrics_path = f"models/{name}_metrics.json"
-                import json
-                with open(metrics_path, 'w') as f:
-                    json.dump({
-                        'model_name': name,
-                        'metrics': metrics,
-                        'training_timestamp': datetime.now().isoformat(),
-                        'model_path': model_path,
-                        'version': '1.0',
-                        'update_type': 'daily'
-                    }, f, indent=2)
-                
-                logger.info(f"Saved updated metrics for {name} to {metrics_path}")
-                
-                # Create enhanced description with metrics reference
-                description = f"Daily update for {name} model. Metrics: {metrics_path}"
-                
-                # Save to Hopsworks
-                self.client.save_model(
-                    model=model_path,
-                    model_name=f"{config.HOPSWORKS_MODEL_NAME}_{name}",
-                    metrics=metrics,
-                    description=description
-                )
-            
-            # Retrain multi-horizon models
-            horizon_data = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_updated)
-            if horizon_data:
-                horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(horizon_data)
+            # Retrain multi-output models
+            X_multi, Y_multi = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_updated)
+            if X_multi is not None and Y_multi is not None:
+                horizon_results = self.multi_horizon_forecaster.train_multi_horizon_models(X_multi, Y_multi)
                 try:
                     import joblib, os
                     os.makedirs("models", exist_ok=True)
-                    for horizon, results in horizon_results.items():
-                        for name, result in results.items():
-                            model = result['model']
-                            model_path = f"models/h{horizon}_{name}_model.pkl"
-                            joblib.dump(model, model_path)
-                            self.client.save_model(
-                                model=model_path,
-                                model_name=f"{config.HOPSWORKS_MODEL_NAME}_h{horizon}_{name}",
-                                metrics=result['test_metrics'],
-                                description=f"{horizon}-hour AQI forecasting model using {name} (daily update)"
-                            )
+                    
+                    # Save multi-output models (one per algorithm)
+                    for model_name, result in horizon_results.items():
+                        model = result['model']
+                        test_metrics_by_horizon = result['test_metrics_by_horizon']
+                        
+                        # Save the multi-output model (predicts all horizons)
+                        model_path = f"models/multi_output_{model_name}_model.pkl"
+                        joblib.dump(model, model_path)
+                        logger.info(f"Saved multi-output {model_name} model to {model_path}")
+                        
+                        # Save metrics for each horizon
+                        for horizon in result['horizons']:
+                            if horizon in test_metrics_by_horizon:
+                                metrics = test_metrics_by_horizon[horizon]
+                                metrics_path = f"models/multi_output_{model_name}_h{horizon}_metrics.json"
+                                with open(metrics_path, 'w') as f:
+                                    json.dump({
+                                        'model_name': f"multi_output_{model_name}",
+                                        'horizon': horizon,
+                                        'algorithm': model_name,
+                                        'metrics': metrics,
+                                        'training_timestamp': datetime.now().isoformat(),
+                                        'model_path': model_path,
+                                        'version': '1.0',
+                                        'update_type': 'daily'
+                                    }, f, indent=2)
+                                
+                                logger.info(f"Saved metrics for {model_name} {horizon}h to {metrics_path}")
+                        
+                        # Use 6h metrics as representative for Hopsworks
+                        representative_metrics = test_metrics_by_horizon.get(6, test_metrics_by_horizon[list(test_metrics_by_horizon.keys())[0]])
+                        
+                        self.client.save_model(
+                            model=model_path,
+                            model_name=f"{config.HOPSWORKS_MODEL_NAME}_multi_output_{model_name}",
+                            metrics=representative_metrics,
+                            description=f"Multi-output AQI forecasting model ({model_name}) for all horizons (daily update)"
+                        )
                 except Exception as e:
                     logger.error(f"Failed to save multi-horizon models: {str(e)}")
             
@@ -469,13 +347,24 @@ class UnifiedPipeline:
                 logger.warning("No data available for alert system")
                 return True
             
-            # Get trained models
-            if not hasattr(self.forecaster, 'models') or not self.forecaster.models:
-                logger.warning("No trained models available for alert system")
+            # Load multi-output models for alert system
+            import joblib
+            import os
+            models_for_alerts = {}
+            for model_key in ['random_forest', 'ridge_regression']:
+                model_path = f"models/multi_output_{model_key}_model.pkl"
+                if os.path.exists(model_path):
+                    try:
+                        models_for_alerts[model_key] = joblib.load(model_path)
+                    except Exception as e:
+                        logger.warning(f"Failed to load {model_key} for alerts: {str(e)}")
+            
+            if not models_for_alerts:
+                logger.warning("No trained multi-output models available for alert system")
                 return True
             
             # Run alert check
-            alert_results = alert_system.run_alert_check(df_data, self.forecaster.models)
+            alert_results = alert_system.run_alert_check(df_data, models_for_alerts)
             
             if alert_results.get('alerts'):
                 logger.info(f"Alert system generated {len(alert_results['alerts'])} alerts")
@@ -508,9 +397,20 @@ class UnifiedPipeline:
             
             analyzer = SHAPAnalyzer()
             
-            # Get the latest trained models
-            if not hasattr(self.forecaster, 'models') or not self.forecaster.models:
-                logger.warning("No trained models available for interpretability analysis")
+            # Load multi-output models for SHAP analysis
+            import joblib
+            import os
+            models_for_shap = {}
+            for model_key in ['random_forest', 'ridge_regression']:
+                model_path = f"models/multi_output_{model_key}_model.pkl"
+                if os.path.exists(model_path):
+                    try:
+                        models_for_shap[model_key] = joblib.load(model_path)
+                    except Exception as e:
+                        logger.warning(f"Failed to load {model_key} for SHAP: {str(e)}")
+            
+            if not models_for_shap:
+                logger.warning("No trained multi-output models available for interpretability analysis")
                 return True
             
             # Get training data for SHAP analysis
@@ -519,34 +419,47 @@ class UnifiedPipeline:
                 logger.warning("No data available for interpretability analysis")
                 return True
             
-            # Prepare features (same logic as training)
-            numeric_features = df_data.select_dtypes(include=[np.number]).columns.tolist()
-            numeric_features = [
-                c for c in numeric_features
-                if c != 'aqi_6h_ahead' and c != 'aqi' and not (c.startswith('aqi_') and not c.startswith('aqi_lag_'))
-            ]
+            # Prepare multi-output data (same as training)
+            X_multi, Y_multi = self.multi_horizon_forecaster.prepare_multi_horizon_data(df_data)
+            if X_multi is None or Y_multi is None or X_multi.empty:
+                logger.warning("Failed to prepare multi-output data for SHAP analysis")
+                return True
             
-            X_all = df_data[numeric_features]
-            y_all = df_data['aqi_6h_ahead']
+            # Chronological split
+            split_idx = int(len(X_multi) * config.TRAIN_TEST_SPLIT)
+            X_train, X_test = X_multi.iloc[:split_idx], X_multi.iloc[split_idx:]
+            Y_train, Y_test = Y_multi.iloc[:split_idx], Y_multi.iloc[split_idx:]
             
-            # Chronological split (same as training)
-            split_idx = int(len(X_all) * config.TRAIN_TEST_SPLIT)
-            X_train, X_test = X_all.iloc[:split_idx], X_all.iloc[split_idx:]
-            y_train, y_test = y_all.iloc[:split_idx], y_all.iloc[split_idx:]
+            # Use 6h horizon for SHAP analysis (index 1 in horizons [1, 6, 12, 24, 48, 72])
+            y_train_shap = Y_train.iloc[:, 1]  # 6h horizon
+            y_test_shap = Y_test.iloc[:, 1]
             
-            logger.info(f"Running SHAP analysis on {len(self.forecaster.models)} models")
+            logger.info(f"Running SHAP analysis on {len(models_for_shap)} multi-output models")
             logger.info(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
             
-            # Run SHAP analysis on each model
+            # Run SHAP analysis on each model (using 6h horizon predictions)
             shap_results = {}
-            for model_name, model in self.forecaster.models.items():
-                logger.info(f"Analyzing {model_name} model...")
+            for model_name, model in models_for_shap.items():
+                logger.info(f"Analyzing {model_name} multi-output model (6h horizon)...")
+                # For multi-output models, we analyze the 6h horizon (index 1)
+                # Create a wrapper that extracts 6h prediction
+                class SingleOutputWrapper:
+                    def __init__(self, multi_output_model, horizon_idx=1):
+                        self.model = multi_output_model
+                        self.horizon_idx = horizon_idx
+                    
+                    def predict(self, X):
+                        pred_all = self.model.predict(X)
+                        return pred_all[:, self.horizon_idx] if len(pred_all.shape) > 1 else [pred_all[self.horizon_idx]]
+                
+                wrapped_model = SingleOutputWrapper(model, horizon_idx=1)  # 6h horizon
+                
                 result = analyzer.analyze_model(
-                    model=model,
+                    model=wrapped_model,
                     X_train=X_train,
                     X_test=X_test,
-                    model_name=model_name,
-                    feature_names=numeric_features
+                    model_name=f"{model_name}_6h",
+                    feature_names=X_train.columns.tolist()
                 )
                 
                 if result:

@@ -130,6 +130,10 @@ class HopsworksClient:
             logger.info(f"Loaded {len(df)} records from feature group")
             
             target_col = "aqi_6h_ahead"
+            if target_col not in df.columns:
+                logger.error("aqi_6h_ahead column not found in data")
+                return None
+            
             drop_cols = [target_col, "timestamp", "city"]
             drop_cols = [col for col in drop_cols if col in df.columns]
             
@@ -190,23 +194,40 @@ class HopsworksClient:
             return None
         
         try:
-            fv = self.fs.get_feature_view(
-                name=config.HOPSWORKS_FEATURE_VIEW_NAME,
-                version=config.HOPSWORKS_FEATURE_VIEW_VERSION
+            # Try feature view first (preferred for dashboard)
+            try:
+                fv = self.fs.get_feature_view(
+                    name=config.HOPSWORKS_FEATURE_VIEW_NAME,
+                    version=config.HOPSWORKS_FEATURE_VIEW_VERSION
+                )
+                
+                if fv is not None:
+                    batch_result = fv.get_batch_data()
+                    if isinstance(batch_result, tuple):
+                        data = batch_result[0]
+                    else:
+                        data = batch_result
+                    
+                    if data is not None and len(data) > 0:
+                        if 'timestamp' in data.columns:
+                            data = data.sort_values('timestamp', ascending=False)
+                        data = data.head(limit)
+                        logger.info(f"Retrieved {len(data)} feature records from feature view")
+                        return data
+            except Exception as fv_error:
+                logger.warning(f"Feature view retrieval failed: {str(fv_error)}, trying feature group...")
+            
+            # Fallback to feature group if feature view fails or doesn't have required columns
+            logger.info("Reading data directly from feature group...")
+            fg = self.fs.get_feature_group(
+                name=config.HOPSWORKS_FEATURE_GROUP_NAME,
+                version=config.HOPSWORKS_FEATURE_GROUP_VERSION
             )
             
-            if fv is None:
-                logger.error("Failed to get feature view")
-                return None
-            
-            batch_result = fv.get_batch_data()
-            if isinstance(batch_result, tuple):
-                data = batch_result[0]
-            else:
-                data = batch_result
+            data = fg.read()
             
             if data is None or len(data) == 0:
-                logger.warning("No data found in feature view")
+                logger.warning("No data found in feature group")
                 return None
             
             if 'timestamp' in data.columns:
@@ -214,11 +235,13 @@ class HopsworksClient:
             
             data = data.head(limit)
             
-            logger.info(f"Retrieved {len(data)} feature records for dashboard")
+            logger.info(f"Retrieved {len(data)} feature records from feature group")
             return data
             
         except Exception as e:
             logger.error(f"Failed to get feature data: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def load_models(self):

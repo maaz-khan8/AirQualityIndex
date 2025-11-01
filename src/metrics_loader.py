@@ -308,4 +308,4 @@ if __name__ == "__main__":
         print(f"Comparison DataFrame shape: {df.shape}")
         print(df.head())
     
-    print("✅ Metrics loader test completed!")
+    print("Metrics loader test completed!")
