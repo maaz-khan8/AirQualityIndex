@@ -3,21 +3,33 @@ import logging
 import config
 from src.pipeline import run_unified_pipeline
 
-logging.basicConfig(
-    level=getattr(logging, config.LOG_LEVEL),
-    format=config.LOG_FORMAT,
-    handlers=[
-        logging.FileHandler(config.LOG_FILE),
-        logging.StreamHandler()
-    ]
-)
+# Configure logging with separate formats for console and file
+logger = logging.getLogger()
+logger.setLevel(getattr(logging, config.LOG_LEVEL))
+
+# Clear existing handlers
+logger.handlers.clear()
+
+# Console handler - minimal format (no timestamp, no level)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(getattr(logging, config.LOG_LEVEL))
+console_handler.setFormatter(logging.Formatter(config.LOG_FORMAT))
+
+# File handler - detailed format (with timestamp and level)
+file_handler = logging.FileHandler(config.LOG_FILE)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter(config.LOG_FILE_FORMAT))
+
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
 
 
 def run_dashboard():
     """Run Streamlit dashboard"""
     try:
-        logger.info("Starting Streamlit dashboard...")
+        logger.debug("Starting Streamlit dashboard...")
         
         import subprocess
         import sys
@@ -29,7 +41,7 @@ def run_dashboard():
             "--server.port", "8501",
             "--server.address", "localhost"
         ])
-        logger.info("Dashboard process started at http://localhost:8501")
+        logger.info("Dashboard started at http://localhost:8501")
         return True
         
     except Exception as e:
@@ -40,16 +52,16 @@ def run_dashboard():
 def test_connections():
     """Test basic connections"""
     try:
-        logger.info("Testing connections...")
+        logger.info("Testing connections")
         
         # Test Hopsworks connection
         from src.hopsworks_client import HopsworksClient
         client = HopsworksClient()
         
         if client.connect():
-            logger.info("Hopsworks connection: OK")
+            logger.info("Hopsworks: OK")
         else:
-            logger.error("Hopsworks connection: FAILED")
+            logger.error("Hopsworks: FAILED")
             return False
         
         # Test data fetcher
@@ -75,7 +87,7 @@ def test_connections():
             logger.error("Data fetcher: FAILED")
             return False
         
-        logger.info("All connections tested successfully!")
+        logger.info("All connections OK")
         return True
         
     except Exception as e:
@@ -97,9 +109,8 @@ def main():
     
     args = parser.parse_args()
     
-    logger.info("=== Air Quality Index Forecasting Pipeline ===")
-    logger.info(f"Command: {args.command}")
-    logger.info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.debug("=== Air Quality Index Forecasting Pipeline ===")
+    logger.debug(f"Command: {args.command}")
     
     try:
         if args.command == "dashboard":

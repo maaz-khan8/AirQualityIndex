@@ -694,101 +694,6 @@ def display_alert_panel():
         st.error(f"Failed to load alert system: {str(e)}")
 
 
-def display_shap_analysis():
-    """Display SHAP model interpretability analysis"""
-    st.subheader("Model Explainability with SHAP")
-    st.info("Understanding which features drive AQI predictions")
-    
-    # Check if SHAP artifacts exist
-    artifacts_dir = "artifacts"
-    if not os.path.exists(artifacts_dir):
-        st.warning("No SHAP analysis artifacts found. Run the pipeline to generate interpretability analysis.")
-        return
-    
-    # Load SHAP analysis summary
-    summary_file = os.path.join(artifacts_dir, "shap_analysis_summary.json")
-    if not os.path.exists(summary_file):
-        st.warning("No SHAP analysis summary found. Run the pipeline to generate interpretability analysis.")
-        return
-    
-    try:
-        with open(summary_file, 'r') as f:
-            shap_summary = json.load(f)
-        
-        st.success(f"SHAP analysis completed on {shap_summary['analysis_timestamp']}")
-        st.info(f"Models analyzed: {', '.join(shap_summary['models_analyzed'])}")
-        
-        # Display results for each model
-        for model_name in shap_summary['models_analyzed']:
-            st.subheader(f"{model_name.replace('_', ' ').title()} Model")
-            
-            # Load model-specific results
-            model_results = shap_summary['results'].get(model_name, {})
-            if not model_results:
-                st.warning(f"No SHAP results found for {model_name}")
-                continue
-            
-            # Display top features
-            top_features = model_results.get('top_features', [])
-            if top_features:
-                st.write("**Top 10 Most Important Features:**")
-                
-                # Create a DataFrame for better display
-                df_features = pd.DataFrame(top_features)
-                df_features['rank'] = range(1, len(df_features) + 1)
-                df_features = df_features[['rank', 'feature', 'importance']]
-                
-                # Display as table
-                st.dataframe(df_features, use_container_width=True)
-                
-                # Create a bar chart
-                fig = px.bar(
-                    df_features.head(10), 
-                    x='importance', 
-                    y='feature',
-                    orientation='h',
-                    title=f"Feature Importance - {model_name.replace('_', ' ').title()}",
-                    labels={'importance': 'Mean |SHAP value|', 'feature': 'Feature'}
-                )
-                fig.update_layout(height=400, yaxis={'categoryorder': 'total ascending'})
-                st.plotly_chart(fig, use_container_width=True)
-            
-            # Display plots if available
-            artifacts = model_results.get('artifacts', {})
-            
-            # Show importance plot
-            importance_plot = artifacts.get('importance_plot')
-            if importance_plot and os.path.exists(importance_plot):
-                st.write("**Feature Importance Visualization:**")
-                st.image(importance_plot, use_column_width=True)
-            
-            # Show summary plot
-            summary_plot = artifacts.get('summary_plot')
-            if summary_plot and os.path.exists(summary_plot):
-                st.write("**SHAP Values Distribution:**")
-                st.image(summary_plot, use_column_width=True)
-            
-            st.divider()
-        
-        # Add explanation
-        st.subheader("Understanding SHAP Values")
-        st.markdown("""
-        **SHAP (SHapley Additive exPlanations)** helps explain model predictions by:
-        
-        - **Feature Importance**: Shows which features most influence predictions
-        - **Direction**: Positive values increase AQI, negative values decrease AQI  
-        - **Magnitude**: Larger absolute values indicate stronger influence
-        
-        **How to interpret:**
-        - Features with high importance are key drivers of AQI predictions
-        - Lag features (e.g., `aqi_lag_6h`) show how past AQI affects future predictions
-        - Weather features show environmental impact on air quality
-        """)
-        
-    except Exception as e:
-        st.error(f"Failed to load SHAP analysis: {str(e)}")
-
-
 def main():
     """Main dashboard function"""
     # Header
@@ -848,6 +753,9 @@ def main():
     # Alert Panel
     display_alert_panel()
     
+    # Model Registry Metrics
+    display_model_metrics()
+    
     # Time Series Chart
     st.subheader("Air Quality Trends")
     time_series_fig = create_time_series_chart(data)
@@ -861,8 +769,8 @@ def main():
     multi_horizon_predictions = generate_multi_horizon_forecast(data)
     
     if multi_horizon_predictions:
-        # Create tabs for different horizons and interpretability
-        tab1, tab2, tab3, tab4, tab5, tab6, tab_shap = st.tabs(["1h", "6h", "12h", "24h", "48h", "72h", "Model Explainability"])
+        # Create tabs for different horizons
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["1h", "6h", "12h", "24h", "48h", "72h"])
         
         with tab1:
             st.metric("1-Hour Ahead", f"{multi_horizon_predictions[1]['random_forest']:.1f}")
@@ -887,9 +795,6 @@ def main():
         with tab6:
             st.metric("72-Hour Ahead", f"{multi_horizon_predictions[72]['random_forest']:.1f}")
             st.info("3-day planning prediction")
-        
-        with tab_shap:
-            display_shap_analysis()
         
         # Model comparison chart
         st.subheader("Model Comparison Across Horizons")

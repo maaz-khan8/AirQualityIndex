@@ -1,42 +1,42 @@
 [
   {
-    "feature":"aqi_lag_1h",
-    "importance":18.829566677
-  },
-  {
     "feature":"pm2_5",
-    "importance":4.8459472379
+    "importance":2.3490411835
   },
   {
-    "feature":"pm2_5_lag_2h",
-    "importance":1.5373042475
+    "feature":"aqi_lag_1h",
+    "importance":1.4438373463
   },
   {
-    "feature":"pm10_rolling_mean_3h",
-    "importance":1.3515643517
+    "feature":"pm10",
+    "importance":1.390485588
+  },
+  {
+    "feature":"pm_combined",
+    "importance":1.2636848711
   },
   {
     "feature":"pm2_5_lag_1h",
-    "importance":1.1859539291
+    "importance":1.0599001019
   },
   {
-    "feature":"ozone_ppb",
-    "importance":0.8557562012
-  },
-  {
-    "feature":"ozone",
-    "importance":0.8031635318
-  },
-  {
-    "feature":"pm10_rolling_mean_6h",
-    "importance":0.658784923
-  },
-  {
-    "feature":"pm10_lag_3h",
-    "importance":0.652627464
+    "feature":"carbon_monoxide_ppm",
+    "importance":0.7400842636
   },
   {
     "feature":"pm10_lag_1h",
-    "importance":0.6378032096
+    "importance":0.6733332315
+  },
+  {
+    "feature":"pm2_5_rolling_mean_12h",
+    "importance":0.5225110864
+  },
+  {
+    "feature":"carbon_monoxide",
+    "importance":0.4320208476
+  },
+  {
+    "feature":"sulphur_dioxide",
+    "importance":0.3438198754
   }
 ]

@@ -190,7 +190,7 @@ class MultiHorizonForecaster:
     
     def prepare_multi_horizon_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
-            logger.info("Preparing multi-output data for all horizons...")
+            logger.debug("Preparing multi-output data for all horizons...")
             
             # Create target variables for all horizons
             df_work = df.copy()
@@ -232,8 +232,8 @@ class MultiHorizonForecaster:
             if not self.feature_names:
                 self.feature_names = feature_columns
             
-            logger.info(f"Prepared {len(X)} samples with {len(self.horizons)} horizon targets")
-            logger.info(f"Feature shape: {X.shape}, Target shape: {Y.shape}")
+            logger.debug(f"Prepared {len(X)} samples with {len(self.horizons)} horizon targets")
+            logger.debug(f"Feature shape: {X.shape}, Target shape: {Y.shape}")
             
             return X, Y
             
@@ -258,14 +258,14 @@ class MultiHorizonForecaster:
             X_train, X_test = X_numeric.iloc[:split_idx], X_numeric.iloc[split_idx:]
             Y_train, Y_test = Y.iloc[:split_idx], Y.iloc[split_idx:]
             
-            logger.info(f"Training multi-output models on {len(X_train)} train samples, {len(X_test)} test samples")
+            logger.debug(f"Training on {len(X_train)} train samples, {len(X_test)} test samples")
             
             results = {}
             
             # Train each multi-output model
             for model_name, model in self.models.items():
                 try:
-                    logger.info(f"Training {model_name} multi-output model for all horizons...")
+                    logger.info(f"Training {model_name}...")
                     
                     # Train model (predicts all horizons at once)
                     model.fit(X_train, Y_train)
@@ -294,7 +294,7 @@ class MultiHorizonForecaster:
                         train_metrics_by_horizon[horizon] = train_metrics
                         test_metrics_by_horizon[horizon] = test_metrics
                         
-                        logger.info(f"  {horizon}h horizon - Test R²: {test_metrics['r2']:.3f}, MAE: {test_metrics['mae']:.3f}")
+                        logger.debug(f"  {horizon}h horizon - Test R²: {test_metrics['r2']:.3f}, MAE: {test_metrics['mae']:.3f}")
                     
                     results[model_name] = {
                         'model': model,
@@ -305,7 +305,7 @@ class MultiHorizonForecaster:
                         'horizons': self.horizons
                     }
                     
-                    logger.info(f"{model_name} multi-output model trained successfully")
+                    logger.debug(f"{model_name} model trained successfully")
                     
                 except Exception as e:
                     logger.error(f"Failed to train {model_name} multi-output model: {str(e)}")
