@@ -1,8 +1,3 @@
-"""
-Simplified Dashboard for Air Quality Index Forecasting
-Single file with all dashboard functionality
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -515,12 +510,7 @@ def display_model_metrics():
                     )
             
             with col3:
-                if best_models.get('rmse', {}).get('model'):
-                    st.metric(
-                        "Best RMSE", 
-                        f"{best_models['rmse']['value']:.4f}",
-                        help=f"Lowest Root Mean Square Error: {best_models['rmse']['model']}"
-                    )
+                pass
         
         # Display model comparison table
         st.subheader("Model Comparison")
@@ -534,12 +524,12 @@ def display_model_metrics():
             if 'training_timestamp' in display_df.columns:
                 display_df['training_timestamp'] = pd.to_datetime(display_df['training_timestamp']).dt.strftime('%Y-%m-%d %H:%M')
             
-            # Reorder columns
-            column_order = ['model_name', 'algorithm', 'horizon', 'r2', 'mae', 'rmse', 'training_timestamp']
+            # Reorder columns (removed RMSE)
+            column_order = ['model_name', 'algorithm', 'horizon', 'r2', 'mae', 'training_timestamp']
             display_df = display_df[[col for col in column_order if col in display_df.columns]]
             
             # Rename columns for better display
-            display_df.columns = ['Model', 'Algorithm', 'Horizon', 'R² Score', 'MAE', 'RMSE', 'Last Trained']
+            display_df.columns = ['Model', 'Algorithm', 'Horizon', 'R² Score', 'MAE', 'Last Trained']
             
             st.dataframe(display_df, use_container_width=True)
             
@@ -605,7 +595,6 @@ def display_model_metrics():
         - Metrics are automatically saved alongside each model
         - R² Score: Higher is better (explains variance)
         - MAE: Lower is better (mean absolute error)
-        - RMSE: Lower is better (root mean square error)
         - Models are ranked by R² score
         """)
         
@@ -651,34 +640,6 @@ def display_alert_panel():
                     st.metric("Highest AQI", f"{highest_aqi['aqi_value']:.1f}")
                 else:
                     st.metric("Highest AQI", "N/A")
-            
-            # Display severity breakdown
-            if severity_counts:
-                st.subheader("Alert Severity Breakdown")
-                
-                # Create severity chart
-                severity_df = pd.DataFrame([
-                    {'Severity': 'Low', 'Count': severity_counts.get('low', 0), 'Color': '#90EE90'},
-                    {'Severity': 'Moderate', 'Count': severity_counts.get('moderate', 0), 'Color': '#FFD700'},
-                    {'Severity': 'High', 'Count': severity_counts.get('high', 0), 'Color': '#FF8C00'},
-                    {'Severity': 'Critical', 'Count': severity_counts.get('critical', 0), 'Color': '#FF4500'}
-                ])
-                
-                fig = px.bar(
-                    severity_df, 
-                    x='Severity', 
-                    y='Count',
-                    color='Severity',
-                    color_discrete_map={
-                        'Low': '#90EE90',
-                        'Moderate': '#FFD700', 
-                        'High': '#FF8C00',
-                        'Critical': '#FF4500'
-                    },
-                    title="Alerts by Severity (Last 24 Hours)"
-                )
-                fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
             
             # Display recent alerts
             recent_alerts = alert_system.get_recent_alerts(24)
@@ -886,13 +847,6 @@ def main():
     
     # Alert Panel
     display_alert_panel()
-    
-    # Model Registry Metrics
-    display_model_metrics()
-    
-    
-    # EDA Snapshot
-    display_eda_snapshot()
     
     # Time Series Chart
     st.subheader("Air Quality Trends")

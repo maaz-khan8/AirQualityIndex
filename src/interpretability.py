@@ -124,26 +124,56 @@ class SHAPAnalyzer:
     def _get_explainer(self, model, X_train: pd.DataFrame):
         """Get appropriate SHAP explainer for model type"""
         try:
-            model_type = type(model).__name__.lower()
+            # Suppress sklearn warnings about feature names
+            import warnings
+            warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
             
+            model_type = type(model).__name__.lower()
+            base_model = model
+            
+            # Handle SingleOutputWrapper (wraps MultiOutputRegressor)
+            if hasattr(model, 'model') and hasattr(model.model, 'estimators_'):
+                # Extract the MultiOutputRegressor
+                mor = model.model
+                if len(mor.estimators_) > 0:
+                    # Get the first estimator (they're all the same base type)
+                    base_model = mor.estimators_[0]
+                    base_type = type(base_model).__name__.lower()
+                    
+                    # Use TreeExplainer for RandomForest
+                    if 'randomforest' in base_type or 'tree' in base_type:
+                        return shap.TreeExplainer(base_model)
+                    # Use LinearExplainer for Ridge/Linear models
+                    elif 'ridge' in base_type or 'linear' in base_type:
+                        return shap.LinearExplainer(base_model, X_train)
+            
+            # Direct model type checking
             if 'randomforest' in model_type or 'tree' in model_type:
-                logger.info("Using TreeExplainer for tree-based model")
                 return shap.TreeExplainer(model)
             
             elif 'linear' in model_type or 'ridge' in model_type or 'lasso' in model_type:
-                logger.info("Using LinearExplainer for linear model")
                 return shap.LinearExplainer(model, X_train)
             
-            else:
-                # Fallback to KernelExplainer (slower but more general)
-                logger.info("Using KernelExplainer as fallback")
-                # Use a subset of training data for background
-                background_size = min(50, len(X_train))
-                background = X_train.sample(n=background_size, random_state=42)
-                return shap.KernelExplainer(model.predict, background)
+            elif 'multioutput' in model_type:
+                # MultiOutputRegressor - extract first estimator
+                if hasattr(model, 'estimators_') and len(model.estimators_) > 0:
+                    base_est = model.estimators_[0]
+                    base_type = type(base_est).__name__.lower()
+                    if 'randomforest' in base_type or 'tree' in base_type:
+                        return shap.TreeExplainer(base_est)
+                    elif 'ridge' in base_type or 'linear' in base_type:
+                        return shap.LinearExplainer(base_est, X_train)
+            
+            # Last resort: KernelExplainer (VERY slow and verbose)
+            # This should rarely be reached with proper model detection
+            background_size = min(20, len(X_train))
+            background = X_train.sample(n=background_size, random_state=42)
+            explainer = shap.KernelExplainer(model.predict, background)
+            return explainer
                 
         except Exception as e:
-            logger.error(f"Failed to create SHAP explainer: {str(e)}")
+            # If explainer creation fails, log and return None (will skip SHAP for this model)
+            logger.debug(f"Failed to create SHAP explainer: {str(e)}")
             return None
     
     def _save_shap_artifacts(self, model_name: str, shap_values: np.ndarray, 

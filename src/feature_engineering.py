@@ -68,7 +68,7 @@ class FeatureEngineer:
         
         lag_columns = ['pm2_5', 'pm10', 'ozone', 'nitrogen_dioxide', 'sulphur_dioxide', 
                       'carbon_monoxide', 'temperature_2m', 'relative_humidity_2m', 
-                      'wind_speed_10m', 'aqi']
+                      'wind_speed_10m', 'wind_direction_10m', 'aqi']
         
         for col in lag_columns:
             if col in df.columns:
@@ -81,7 +81,8 @@ class FeatureEngineer:
         df = df.copy()
         
         rolling_columns = ['pm2_5', 'pm10', 'ozone', 'nitrogen_dioxide', 
-                          'temperature_2m', 'wind_speed_10m', 'aqi']
+                          'temperature_2m', 'wind_speed_10m', 'relative_humidity_2m', 
+                          'pressure_msl', 'aqi']
         
         for col in rolling_columns:
             if col in df.columns:

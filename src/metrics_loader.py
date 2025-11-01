@@ -1,8 +1,3 @@
-"""
-Model Registry Metrics Loader
-Loads and displays model metrics from sidecar JSON files
-"""
-
 import json
 import os
 import pandas as pd
@@ -14,20 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 class ModelMetricsLoader:
-    """
-    Loads model metrics from sidecar JSON files and provides utilities for display
-    """
     
     def __init__(self, models_dir: str = "models"):
         self.models_dir = models_dir
     
     def load_all_metrics(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Load metrics for all models in the models directory
-        
-        Returns:
-            Dictionary of model_name -> metrics_data
-        """
         metrics_data = {}
         
         try:
@@ -59,15 +45,6 @@ class ModelMetricsLoader:
             return metrics_data
     
     def load_model_metrics(self, model_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Load metrics for a specific model
-        
-        Args:
-            model_name: Name of the model
-            
-        Returns:
-            Metrics data dictionary or None if not found
-        """
         try:
             metrics_path = os.path.join(self.models_dir, f"{model_name}_metrics.json")
             
@@ -85,12 +62,6 @@ class ModelMetricsLoader:
             return None
     
     def get_metrics_summary(self) -> Dict[str, Any]:
-        """
-        Get a summary of all model metrics
-        
-        Returns:
-            Summary dictionary with model comparisons
-        """
         try:
             all_metrics = self.load_all_metrics()
             
@@ -151,12 +122,6 @@ class ModelMetricsLoader:
             return {'error': str(e)}
     
     def get_model_comparison_dataframe(self) -> Optional[pd.DataFrame]:
-        """
-        Get model metrics as a pandas DataFrame for easy comparison
-        
-        Returns:
-            DataFrame with model metrics or None if no data
-        """
         try:
             summary = self.get_metrics_summary()
             
@@ -182,12 +147,6 @@ class ModelMetricsLoader:
             return None
     
     def get_horizon_performance(self) -> Dict[int, Dict[str, Any]]:
-        """
-        Get performance metrics grouped by horizon
-        
-        Returns:
-            Dictionary of horizon -> performance metrics
-        """
         try:
             all_metrics = self.load_all_metrics()
             horizon_performance = {}
@@ -237,12 +196,6 @@ class ModelMetricsLoader:
             return {}
     
     def get_latest_model_versions(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Get the latest version of each model type
-        
-        Returns:
-            Dictionary of model_type -> latest_metrics
-        """
         try:
             all_metrics = self.load_all_metrics()
             latest_models = {}
@@ -276,12 +229,6 @@ class ModelMetricsLoader:
 
 
 def load_model_metrics_summary() -> Dict[str, Any]:
-    """
-    Convenience function to load model metrics summary
-    
-    Returns:
-        Model metrics summary dictionary
-    """
     try:
         loader = ModelMetricsLoader()
         return loader.get_metrics_summary()
