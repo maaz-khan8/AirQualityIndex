@@ -120,7 +120,10 @@ def generate_multi_horizon_forecast(data):
         
         # Prepare features without creating target variable
         try:
-            df_features = feature_engineer.create_features(df_latest.copy())
+            # Use engineer_features and then remove target columns
+            df_features = feature_engineer.engineer_features(df_latest.copy())
+            if df_features is None:
+                raise ValueError("Feature engineering returned None")
             # Remove target columns if they exist
             feature_cols = [c for c in df_features.columns 
                           if c not in ['aqi_6h_ahead', 'aqi_ahead', 'aqi']]
