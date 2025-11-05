@@ -120,39 +120,3 @@ class OpenMeteoFetcher:
         except Exception as e:
             logger.error(f"Combined fetch failed: {str(e)}")
             return None
-
-    def get_data_summary(self, df: pd.DataFrame) -> Optional[dict]:
-        try:
-            if df.empty:
-                return None
-            
-            pollutants = {}
-            weather = {}
-            
-            for col in df.columns:
-                if col in ['timestamp', 'city', 'latitude', 'longitude']:
-                    continue
-                    
-                if col in config.POLLUTANT_FEATURES:
-                    pollutants[col] = {
-                        'mean': df[col].mean(),
-                        'std': df[col].std(),
-                        'min': df[col].min(),
-                        'max': df[col].max()
-                    }
-                elif col in config.WEATHER_FEATURES:
-                    weather[col] = {
-                        'mean': df[col].mean(),
-                        'std': df[col].std(),
-                        'min': df[col].min(),
-                        'max': df[col].max()
-                    }
-            
-            return {
-                'pollutants': pollutants,
-                'weather': weather
-            }
-            
-        except Exception as e:
-            logger.error(f"Summary generation failed: {str(e)}")
-            return None

@@ -109,7 +109,7 @@ class AQIForecaster:
             logger.info(f"Train R2: {result['train_metrics']['r2']:.3f}, Test R2: {result['test_metrics']['r2']:.3f}")
             logger.info(f"Train MAE: {result['train_metrics']['mae']:.3f}, Test MAE: {result['test_metrics']['mae']:.3f}")
 
-    def get_feature_importance(self, model_name: str = 'xgboost', top_n: int = 15):
+    def get_feature_importance(self, model_name: str = 'random_forest', top_n: int = 15):
         if model_name not in self.results:
             return None
         
@@ -149,7 +149,7 @@ def train_from_hopsworks():
         forecaster = forecaster.train_from_hopsworks()
         
         if forecaster:
-            feature_imp = forecaster.get_feature_importance('xgboost', top_n=20)
+            feature_imp = forecaster.get_feature_importance('random_forest', top_n=20)
             
             logger.info("Saving models to Hopsworks Model Registry...")
             for name, result in forecaster.results.items():
@@ -354,102 +354,6 @@ class MultiHorizonForecaster:
         
         return {'mse': mse, 'mae': mae, 'r2': r2}
     
-    def generate_multi_horizon_predictions(self, X_latest: pd.DataFrame, horizon_results: Dict[int, Dict[str, Dict]]) -> Dict[int, Dict[str, float]]:
-        """Generate predictions for all horizons"""
-        try:
-            predictions = {}
-            
-            for horizon in self.horizons:
-                if horizon not in horizon_results:
-                    continue
-                
-                horizon_predictions = {}
-                
-                for model_name, model_data in horizon_results[horizon].items():
-                    try:
-                        model = model_data['model']
-                        pred = model.predict(X_latest)[0]
-                        horizon_predictions[model_name] = float(pred)
-                        
-                    except Exception as e:
-                        logger.error(f"Failed to predict with {model_name} for {horizon}h: {str(e)}")
-                        continue
-                
-                if horizon_predictions:
-                    predictions[horizon] = horizon_predictions
-            
-            return predictions
-            
-        except Exception as e:
-            logger.error(f"Failed to generate multi-horizon predictions: {str(e)}")
-            return {}
-    
-    def print_multi_horizon_summary(self, horizon_results: Dict[int, Dict[str, Dict]]):
-        """Print summary of multi-horizon model performance"""
-        logger.info("Multi-Horizon Forecasting Summary:")
-        logger.info("=" * 50)
-        
-        for horizon in sorted(horizon_results.keys()):
-            logger.info(f"\n{horizon}-Hour Horizon:")
-            logger.info("-" * 20)
-            
-            for model_name, result in horizon_results[horizon].items():
-                train_r2 = result['train_metrics']['r2']
-                test_r2 = result['test_metrics']['r2']
-                test_mae = result['test_metrics']['mae']
-                
-                logger.info(f"{model_name.upper()}:")
-                logger.info(f"  Train R²: {train_r2:.3f}, Test R²: {test_r2:.3f}")
-                logger.info(f"  Test MAE: {test_mae:.3f}")
-
-
-def train_multi_horizon_from_hopsworks():
-    """Train multi-horizon models from Hopsworks data"""
-    try:
-        logger.info("Starting multi-horizon forecasting training...")
-        
-        # Initialize multi-horizon forecaster
-        forecaster = MultiHorizonForecaster()
-        
-        # Connect to Hopsworks
-        client = HopsworksClient()
-        if not client.connect():
-            logger.error("Failed to connect to Hopsworks")
-            return None
-        
-        # Get feature data
-        logger.info("Loading data from Hopsworks...")
-        df = client.get_feature_data()
-        
-        if df is None or df.empty:
-            logger.error("No data available from Hopsworks")
-            return None
-        
-        logger.info(f"Loaded {len(df)} records for multi-horizon training")
-        
-        # Prepare multi-horizon data
-        horizon_data = forecaster.prepare_multi_horizon_data(df)
-        
-        if not horizon_data:
-            logger.error("Failed to prepare multi-horizon data")
-            return None
-        
-        # Train models for all horizons
-        horizon_results = forecaster.train_multi_horizon_models(horizon_data)
-        
-        if not horizon_results:
-            logger.error("Failed to train multi-horizon models")
-            return None
-        
-        # Print summary
-        forecaster.print_multi_horizon_summary(horizon_results)
-        
-        logger.info("Multi-horizon forecasting training completed successfully")
-        return forecaster
-        
-    except Exception as e:
-        logger.error(f"Multi-horizon training failed: {str(e)}")
-        return None
 
 
 if __name__ == "__main__":

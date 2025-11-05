@@ -21,7 +21,6 @@ class HopsworksClient:
     def __init__(self):
         self.project = None
         self.fs = None
-        self.fv = None
 
     def connect(self):
         try:
@@ -67,41 +66,6 @@ class HopsworksClient:
             
         except Exception as e:
             logger.error(f"Failed to create/update feature group: {str(e)}")
-            return None
-
-    def create_feature_view(self, name: Optional[str] = None,
-                          version: Optional[int] = None,
-                          description: str = "Feature view for 6-hour AQI forecasting",
-                          labels: List[str] = None):
-        
-        if self.fs is None:
-            logger.error("Not connected to Hopsworks. Call connect() first.")
-            return None
-        
-        name = name or config.HOPSWORKS_FEATURE_VIEW_NAME
-        version = version or config.HOPSWORKS_FEATURE_VIEW_VERSION
-        labels = labels or ["aqi_6h_ahead"]
-        
-        try:
-            fg_name = config.HOPSWORKS_FEATURE_GROUP_NAME
-            fg_version = config.HOPSWORKS_FEATURE_GROUP_VERSION
-            
-            fg = self.fs.get_feature_group(name=fg_name, version=fg_version)
-            
-            fv = self.fs.get_or_create_feature_view(
-                name=name,
-                version=version,
-                description=description,
-                labels=labels,
-                query=fg.select_all()
-            )
-            
-            self.fv = fv
-            logger.info(f"Feature view created: {name}")
-            return fv
-            
-        except Exception as e:
-            logger.error(f"Failed to create feature view: {str(e)}")
             return None
 
     def get_training_data(self, feature_view_name: Optional[str] = None,
