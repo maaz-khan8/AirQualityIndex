@@ -2,22 +2,6 @@
 
 A comprehensive machine learning system for forecasting Air Quality Index (AQI) using historical air quality and weather data. The system implements multi-horizon forecasting (1h, 6h, 12h, 24h, 48h, 72h ahead) using ensemble machine learning models, with all data stored and managed in Hopsworks cloud infrastructure.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Components](#components)
-- [Workflow](#workflow)
-- [API Documentation](#api-documentation)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Overview
 
