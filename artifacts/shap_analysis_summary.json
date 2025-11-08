@@ -1,5 +1,5 @@
 {
-  "analysis_timestamp": "2025-11-02T00:22:08.106069",
+  "analysis_timestamp": "2025-11-09T00:30:01.781864",
   "models_analyzed": [
     "random_forest",
     "ridge_regression"
@@ -7,49 +7,49 @@
   "results": {
     "random_forest": {
       "model_name": "random_forest_6h",
-      "analysis_timestamp": "2025-11-02T00:22:07.597429",
+      "analysis_timestamp": "2025-11-09T00:30:01.204285",
       "test_samples_analyzed": 100,
       "total_features": 107,
       "top_features": [
         {
-          "feature": "pm2_5",
-          "importance": 2.3490411834895917
+          "feature": "aqi_lag_1h",
+          "importance": 3.0907410411019764
         },
         {
-          "feature": "aqi_lag_1h",
-          "importance": 1.44383734631781
+          "feature": "pm2_5",
+          "importance": 1.4253133985221638
         },
         {
           "feature": "pm10",
-          "importance": 1.3904855879834725
-        },
-        {
-          "feature": "pm_combined",
-          "importance": 1.2636848710777302
+          "importance": 1.132992059311469
         },
         {
           "feature": "pm2_5_lag_1h",
-          "importance": 1.0599001018983731
+          "importance": 1.0980118224546915
         },
         {
-          "feature": "carbon_monoxide_ppm",
-          "importance": 0.7400842635950358
+          "feature": "pm_combined",
+          "importance": 0.9831187911073315
+        },
+        {
+          "feature": "pm10_rolling_mean_12h",
+          "importance": 0.8719461184485725
         },
         {
           "feature": "pm10_lag_1h",
-          "importance": 0.6733332315338464
+          "importance": 0.7269110522146512
+        },
+        {
+          "feature": "pm10_lag_6h",
+          "importance": 0.5677757713981424
+        },
+        {
+          "feature": "sulphur_dioxide_lag_6h",
+          "importance": 0.5655105854117192
         },
         {
           "feature": "pm2_5_rolling_mean_12h",
-          "importance": 0.5225110864281821
-        },
-        {
-          "feature": "carbon_monoxide",
-          "importance": 0.43202084758401116
-        },
-        {
-          "feature": "sulphur_dioxide",
-          "importance": 0.3438198754496832
+          "importance": 0.5636702303972908
         }
       ],
       "artifacts": {
@@ -60,49 +60,49 @@
     },
     "ridge_regression": {
       "model_name": "ridge_regression_6h",
-      "analysis_timestamp": "2025-11-02T00:22:08.102083",
+      "analysis_timestamp": "2025-11-09T00:30:01.778872",
       "test_samples_analyzed": 100,
       "total_features": 107,
       "top_features": [
         {
           "feature": "pm_combined",
-          "importance": 9.974546418686081
+          "importance": 13.206550945213815
         },
         {
           "feature": "pm2_5",
-          "importance": 8.27414352108192
+          "importance": 11.16376485678233
         },
         {
-          "feature": "relative_humidity_2m",
-          "importance": 3.9388405851455683
+          "feature": "wind_speed_10m_rolling_mean_12h",
+          "importance": 7.199403972849113
         },
         {
-          "feature": "relative_humidity_2m_rolling_mean_12h",
-          "importance": 3.9020195571776695
+          "feature": "pressure_msl_rolling_mean_12h",
+          "importance": 6.942383915818692
         },
         {
-          "feature": "pm2_5_lag_1h",
-          "importance": 3.257617130773298
+          "feature": "pm2_5_rolling_mean_12h",
+          "importance": 6.411368873733011
         },
         {
           "feature": "pm10",
-          "importance": 2.933683734652264
+          "importance": 6.393557489712678
         },
         {
-          "feature": "temp_humidity_interaction",
-          "importance": 2.9035225731861085
+          "feature": "pm10_rolling_mean_12h",
+          "importance": 5.496567468431469
         },
         {
-          "feature": "nitrogen_dioxide",
-          "importance": 2.632181526004425
+          "feature": "relative_humidity_2m_rolling_mean_12h",
+          "importance": 5.311074073693361
         },
         {
-          "feature": "temperature_2m",
-          "importance": 2.3443514236103424
+          "feature": "pm2_5_rolling_mean_48h",
+          "importance": 4.795544369135784
         },
         {
-          "feature": "pm10_lag_1h",
-          "importance": 2.336038681630168
+          "feature": "pressure_msl_rolling_mean_24h",
+          "importance": 4.619234101155694
         }
       ],
       "artifacts": {
