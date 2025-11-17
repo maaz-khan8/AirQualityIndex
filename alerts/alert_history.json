@@ -279,5 +279,341 @@
       "Consider reducing outdoor activities if you're sensitive to air pollution",
       "Monitor air quality updates"
     ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 69.8,
+    "severity": "low",
+    "source": "1h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 69.8 (1h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 65.5,
+    "severity": "low",
+    "source": "6h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 65.5 (6h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 52.1,
+    "severity": "low",
+    "source": "6h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 52.1 (6h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 72.3,
+    "severity": "low",
+    "source": "12h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 72.3 (12h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 65.9,
+    "severity": "low",
+    "source": "24h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 65.9 (24h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 60.5,
+    "severity": "low",
+    "source": "24h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 60.5 (24h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 71.4,
+    "severity": "low",
+    "source": "48h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 71.4 (48h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 59.3,
+    "severity": "low",
+    "source": "48h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 59.3 (48h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 70.8,
+    "severity": "low",
+    "source": "72h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 70.8 (72h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-16T23:00:02.369444",
+    "aqi_value": 60.3,
+    "severity": "low",
+    "source": "72h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 60.3 (72h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 64.1,
+    "severity": "low",
+    "source": "1h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 64.1 (1h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 52.2,
+    "severity": "low",
+    "source": "1h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 52.2 (1h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 62.0,
+    "severity": "low",
+    "source": "6h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 62.0 (6h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 57.3,
+    "severity": "low",
+    "source": "6h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 57.3 (6h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 60.9,
+    "severity": "low",
+    "source": "12h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 60.9 (12h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 60.5,
+    "severity": "low",
+    "source": "24h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 60.5 (24h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 53.5,
+    "severity": "low",
+    "source": "24h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 53.5 (24h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 64.5,
+    "severity": "low",
+    "source": "48h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 64.5 (48h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T12:28:57.053599",
+    "aqi_value": 65.8,
+    "severity": "low",
+    "source": "72h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 65.8 (72h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 69.8,
+    "severity": "low",
+    "source": "1h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 69.8 (1h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 52.1,
+    "severity": "low",
+    "source": "6h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 52.1 (6h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 72.3,
+    "severity": "low",
+    "source": "12h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 72.3 (12h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 65.9,
+    "severity": "low",
+    "source": "24h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 65.9 (24h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 60.5,
+    "severity": "low",
+    "source": "24h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 60.5 (24h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 71.4,
+    "severity": "low",
+    "source": "48h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 71.4 (48h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 59.3,
+    "severity": "low",
+    "source": "48h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 59.3 (48h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 70.8,
+    "severity": "low",
+    "source": "72h_random_forest",
+    "message": "Moderate air quality concern detected: AQI 70.8 (72h_random_forest)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
+  },
+  {
+    "timestamp": "2025-11-17T13:18:01.191756",
+    "aqi_value": 60.3,
+    "severity": "low",
+    "source": "72h_ridge_regression",
+    "message": "Moderate air quality concern detected: AQI 60.3 (72h_ridge_regression)",
+    "threshold_exceeded": "Low (50+)",
+    "recommendations": [
+      "Consider reducing outdoor activities if you're sensitive to air pollution",
+      "Monitor air quality updates"
+    ]
   }
 ]

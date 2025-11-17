@@ -428,45 +428,46 @@ class UnifiedPipeline:
             X_train, X_test = X_multi.iloc[:split_idx], X_multi.iloc[split_idx:]
             Y_train, Y_test = Y_multi.iloc[:split_idx], Y_multi.iloc[split_idx:]
             
-            # Use 6h horizon for SHAP analysis (index 1 in horizons [1, 6, 12, 24, 48, 72])
-            y_train_shap = Y_train.iloc[:, 1]  # 6h horizon
-            y_test_shap = Y_test.iloc[:, 1]
+            horizons = self.multi_horizon_forecaster.horizons
             
-            logger.debug(f"Running SHAP analysis on {len(models_for_shap)} models")
+            logger.debug(f"Running SHAP analysis on {len(models_for_shap)} models and {len(horizons)} horizons")
             logger.debug(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
             
-            # Run SHAP analysis on each model (using 6h horizon predictions)
+            # Run SHAP analysis on each model and each horizon separately
             shap_results = {}
             for model_name, model in models_for_shap.items():
-                logger.info(f"Analyzing {model_name} multi-output model (6h horizon)...")
-                # For multi-output models, we analyze the 6h horizon (index 1)
-                # Create a wrapper that extracts 6h prediction
-                class SingleOutputWrapper:
-                    def __init__(self, multi_output_model, horizon_idx=1):
-                        self.model = multi_output_model
-                        self.horizon_idx = horizon_idx
+                shap_results[model_name] = {}
+                
+                for idx, horizon in enumerate(horizons):
+                    logger.info(f"Analyzing {model_name} multi-output model ({horizon}h horizon)...")
                     
-                    def predict(self, X):
-                        pred_all = self.model.predict(X)
-                        return pred_all[:, self.horizon_idx] if len(pred_all.shape) > 1 else [pred_all[self.horizon_idx]]
-                
-                wrapped_model = SingleOutputWrapper(model, horizon_idx=1)  # 6h horizon
-                
-                result = analyzer.analyze_model(
-                    model=wrapped_model,
-                    X_train=X_train,
-                    X_test=X_test,
-                    model_name=f"{model_name}_6h",
-                    feature_names=X_train.columns.tolist()
-                )
-                
-                if result:
-                    shap_results[model_name] = result
-                    logger.info(f"SHAP analysis completed for {model_name}")
-                else:
-                    logger.warning(f"SHAP analysis failed for {model_name}")
+                    # Create a wrapper that extracts the prediction for a single horizon
+                    class SingleOutputWrapper:
+                        def __init__(self, multi_output_model, horizon_idx: int):
+                            self.model = multi_output_model
+                            self.horizon_idx = horizon_idx
+                        
+                        def predict(self, X):
+                            pred_all = self.model.predict(X)
+                            return pred_all[:, self.horizon_idx] if len(pred_all.shape) > 1 else [pred_all[self.horizon_idx]]
+                    
+                    wrapped_model = SingleOutputWrapper(model, horizon_idx=idx)
+                    
+                    result = analyzer.analyze_model(
+                        model=wrapped_model,
+                        X_train=X_train,
+                        X_test=X_test,
+                        model_name=f"{model_name}_h{horizon}",
+                        feature_names=X_train.columns.tolist()
+                    )
+                    
+                    if result:
+                        shap_results[model_name][horizon] = result
+                        logger.info(f"SHAP analysis completed for {model_name} ({horizon}h)")
+                    else:
+                        logger.warning(f"SHAP analysis failed for {model_name} ({horizon}h)")
             
-            # Save combined results
+            # Save combined results (all models × horizons)
             if shap_results:
                 import json
                 combined_file = "artifacts/shap_analysis_summary.json"
@@ -475,7 +476,8 @@ class UnifiedPipeline:
                 with open(combined_file, 'w') as f:
                     json.dump({
                         'analysis_timestamp': datetime.now().isoformat(),
-                        'models_analyzed': list(shap_results.keys()),
+                        'models_analyzed': list(models_for_shap.keys()),
+                        'horizons': horizons,
                         'results': shap_results
                     }, f, indent=2)
                 

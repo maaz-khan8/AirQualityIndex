@@ -1,114 +1,656 @@
 {
-  "analysis_timestamp": "2025-11-09T00:30:01.781864",
+  "analysis_timestamp": "2025-11-17T13:19:40.753192",
   "models_analyzed": [
     "random_forest",
     "ridge_regression"
   ],
+  "horizons": [
+    1,
+    6,
+    12,
+    24,
+    48,
+    72
+  ],
   "results": {
     "random_forest": {
-      "model_name": "random_forest_6h",
-      "analysis_timestamp": "2025-11-09T00:30:01.204285",
-      "test_samples_analyzed": 100,
-      "total_features": 107,
-      "top_features": [
-        {
-          "feature": "aqi_lag_1h",
-          "importance": 3.0907410411019764
-        },
-        {
-          "feature": "pm2_5",
-          "importance": 1.4253133985221638
-        },
-        {
-          "feature": "pm10",
-          "importance": 1.132992059311469
-        },
-        {
-          "feature": "pm2_5_lag_1h",
-          "importance": 1.0980118224546915
-        },
-        {
-          "feature": "pm_combined",
-          "importance": 0.9831187911073315
-        },
-        {
-          "feature": "pm10_rolling_mean_12h",
-          "importance": 0.8719461184485725
-        },
-        {
-          "feature": "pm10_lag_1h",
-          "importance": 0.7269110522146512
-        },
-        {
-          "feature": "pm10_lag_6h",
-          "importance": 0.5677757713981424
-        },
-        {
-          "feature": "sulphur_dioxide_lag_6h",
-          "importance": 0.5655105854117192
-        },
-        {
-          "feature": "pm2_5_rolling_mean_12h",
-          "importance": 0.5636702303972908
+      "1": {
+        "model_name": "random_forest_h1",
+        "analysis_timestamp": "2025-11-17T13:19:28.995578",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "aqi_lag_1h",
+            "importance": 3.0907410411019764
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 1.4253133985221638
+          },
+          {
+            "feature": "pm10",
+            "importance": 1.132992059311469
+          },
+          {
+            "feature": "pm2_5_lag_1h",
+            "importance": 1.0980118224546915
+          },
+          {
+            "feature": "pm_combined",
+            "importance": 0.9831187911073315
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 0.8719461184485725
+          },
+          {
+            "feature": "pm10_lag_1h",
+            "importance": 0.7269110522146512
+          },
+          {
+            "feature": "pm10_lag_6h",
+            "importance": 0.5677757713981424
+          },
+          {
+            "feature": "sulphur_dioxide_lag_6h",
+            "importance": 0.5655105854117192
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 0.5636702303972908
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_random_forest_h1.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_random_forest_h1.json",
+          "importance_plot": "artifacts/shap_importance_random_forest_h1.png"
         }
-      ],
-      "artifacts": {
-        "top_features_json": "artifacts/shap_top_features_random_forest_6h.json",
-        "feature_importance_json": "artifacts/shap_feature_importance_random_forest_6h.json",
-        "importance_plot": "artifacts/shap_importance_random_forest_6h.png"
+      },
+      "6": {
+        "model_name": "random_forest_h6",
+        "analysis_timestamp": "2025-11-17T13:19:30.065717",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "aqi_lag_1h",
+            "importance": 3.0907410411019764
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 1.4253133985221638
+          },
+          {
+            "feature": "pm10",
+            "importance": 1.132992059311469
+          },
+          {
+            "feature": "pm2_5_lag_1h",
+            "importance": 1.0980118224546915
+          },
+          {
+            "feature": "pm_combined",
+            "importance": 0.9831187911073315
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 0.8719461184485725
+          },
+          {
+            "feature": "pm10_lag_1h",
+            "importance": 0.7269110522146512
+          },
+          {
+            "feature": "pm10_lag_6h",
+            "importance": 0.5677757713981424
+          },
+          {
+            "feature": "sulphur_dioxide_lag_6h",
+            "importance": 0.5655105854117192
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 0.5636702303972908
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_random_forest_h6.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_random_forest_h6.json",
+          "importance_plot": "artifacts/shap_importance_random_forest_h6.png"
+        }
+      },
+      "12": {
+        "model_name": "random_forest_h12",
+        "analysis_timestamp": "2025-11-17T13:19:31.166775",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "aqi_lag_1h",
+            "importance": 3.0907410411019764
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 1.4253133985221638
+          },
+          {
+            "feature": "pm10",
+            "importance": 1.132992059311469
+          },
+          {
+            "feature": "pm2_5_lag_1h",
+            "importance": 1.0980118224546915
+          },
+          {
+            "feature": "pm_combined",
+            "importance": 0.9831187911073315
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 0.8719461184485725
+          },
+          {
+            "feature": "pm10_lag_1h",
+            "importance": 0.7269110522146512
+          },
+          {
+            "feature": "pm10_lag_6h",
+            "importance": 0.5677757713981424
+          },
+          {
+            "feature": "sulphur_dioxide_lag_6h",
+            "importance": 0.5655105854117192
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 0.5636702303972908
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_random_forest_h12.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_random_forest_h12.json",
+          "importance_plot": "artifacts/shap_importance_random_forest_h12.png"
+        }
+      },
+      "24": {
+        "model_name": "random_forest_h24",
+        "analysis_timestamp": "2025-11-17T13:19:32.256917",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "aqi_lag_1h",
+            "importance": 3.0907410411019764
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 1.4253133985221638
+          },
+          {
+            "feature": "pm10",
+            "importance": 1.132992059311469
+          },
+          {
+            "feature": "pm2_5_lag_1h",
+            "importance": 1.0980118224546915
+          },
+          {
+            "feature": "pm_combined",
+            "importance": 0.9831187911073315
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 0.8719461184485725
+          },
+          {
+            "feature": "pm10_lag_1h",
+            "importance": 0.7269110522146512
+          },
+          {
+            "feature": "pm10_lag_6h",
+            "importance": 0.5677757713981424
+          },
+          {
+            "feature": "sulphur_dioxide_lag_6h",
+            "importance": 0.5655105854117192
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 0.5636702303972908
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_random_forest_h24.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_random_forest_h24.json",
+          "importance_plot": "artifacts/shap_importance_random_forest_h24.png"
+        }
+      },
+      "48": {
+        "model_name": "random_forest_h48",
+        "analysis_timestamp": "2025-11-17T13:19:33.330989",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "aqi_lag_1h",
+            "importance": 3.0907410411019764
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 1.4253133985221638
+          },
+          {
+            "feature": "pm10",
+            "importance": 1.132992059311469
+          },
+          {
+            "feature": "pm2_5_lag_1h",
+            "importance": 1.0980118224546915
+          },
+          {
+            "feature": "pm_combined",
+            "importance": 0.9831187911073315
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 0.8719461184485725
+          },
+          {
+            "feature": "pm10_lag_1h",
+            "importance": 0.7269110522146512
+          },
+          {
+            "feature": "pm10_lag_6h",
+            "importance": 0.5677757713981424
+          },
+          {
+            "feature": "sulphur_dioxide_lag_6h",
+            "importance": 0.5655105854117192
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 0.5636702303972908
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_random_forest_h48.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_random_forest_h48.json",
+          "importance_plot": "artifacts/shap_importance_random_forest_h48.png"
+        }
+      },
+      "72": {
+        "model_name": "random_forest_h72",
+        "analysis_timestamp": "2025-11-17T13:19:34.435037",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "aqi_lag_1h",
+            "importance": 3.0907410411019764
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 1.4253133985221638
+          },
+          {
+            "feature": "pm10",
+            "importance": 1.132992059311469
+          },
+          {
+            "feature": "pm2_5_lag_1h",
+            "importance": 1.0980118224546915
+          },
+          {
+            "feature": "pm_combined",
+            "importance": 0.9831187911073315
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 0.8719461184485725
+          },
+          {
+            "feature": "pm10_lag_1h",
+            "importance": 0.7269110522146512
+          },
+          {
+            "feature": "pm10_lag_6h",
+            "importance": 0.5677757713981424
+          },
+          {
+            "feature": "sulphur_dioxide_lag_6h",
+            "importance": 0.5655105854117192
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 0.5636702303972908
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_random_forest_h72.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_random_forest_h72.json",
+          "importance_plot": "artifacts/shap_importance_random_forest_h72.png"
+        }
       }
     },
     "ridge_regression": {
-      "model_name": "ridge_regression_6h",
-      "analysis_timestamp": "2025-11-09T00:30:01.778872",
-      "test_samples_analyzed": 100,
-      "total_features": 107,
-      "top_features": [
-        {
-          "feature": "pm_combined",
-          "importance": 13.206550945213815
-        },
-        {
-          "feature": "pm2_5",
-          "importance": 11.16376485678233
-        },
-        {
-          "feature": "wind_speed_10m_rolling_mean_12h",
-          "importance": 7.199403972849113
-        },
-        {
-          "feature": "pressure_msl_rolling_mean_12h",
-          "importance": 6.942383915818692
-        },
-        {
-          "feature": "pm2_5_rolling_mean_12h",
-          "importance": 6.411368873733011
-        },
-        {
-          "feature": "pm10",
-          "importance": 6.393557489712678
-        },
-        {
-          "feature": "pm10_rolling_mean_12h",
-          "importance": 5.496567468431469
-        },
-        {
-          "feature": "relative_humidity_2m_rolling_mean_12h",
-          "importance": 5.311074073693361
-        },
-        {
-          "feature": "pm2_5_rolling_mean_48h",
-          "importance": 4.795544369135784
-        },
-        {
-          "feature": "pressure_msl_rolling_mean_24h",
-          "importance": 4.619234101155694
+      "1": {
+        "model_name": "ridge_regression_h1",
+        "analysis_timestamp": "2025-11-17T13:19:35.469276",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "pm_combined",
+            "importance": 13.206550945213815
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 11.16376485678233
+          },
+          {
+            "feature": "wind_speed_10m_rolling_mean_12h",
+            "importance": 7.199403972849113
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_12h",
+            "importance": 6.942383915818692
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 6.411368873733011
+          },
+          {
+            "feature": "pm10",
+            "importance": 6.393557489712678
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 5.496567468431469
+          },
+          {
+            "feature": "relative_humidity_2m_rolling_mean_12h",
+            "importance": 5.311074073693361
+          },
+          {
+            "feature": "pm2_5_rolling_mean_48h",
+            "importance": 4.795544369135784
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_24h",
+            "importance": 4.619234101155694
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_ridge_regression_h1.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_h1.json",
+          "importance_plot": "artifacts/shap_importance_ridge_regression_h1.png"
         }
-      ],
-      "artifacts": {
-        "top_features_json": "artifacts/shap_top_features_ridge_regression_6h.json",
-        "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_6h.json",
-        "importance_plot": "artifacts/shap_importance_ridge_regression_6h.png"
+      },
+      "6": {
+        "model_name": "ridge_regression_h6",
+        "analysis_timestamp": "2025-11-17T13:19:36.508536",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "pm_combined",
+            "importance": 13.206550945213815
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 11.16376485678233
+          },
+          {
+            "feature": "wind_speed_10m_rolling_mean_12h",
+            "importance": 7.199403972849113
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_12h",
+            "importance": 6.942383915818692
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 6.411368873733011
+          },
+          {
+            "feature": "pm10",
+            "importance": 6.393557489712678
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 5.496567468431469
+          },
+          {
+            "feature": "relative_humidity_2m_rolling_mean_12h",
+            "importance": 5.311074073693361
+          },
+          {
+            "feature": "pm2_5_rolling_mean_48h",
+            "importance": 4.795544369135784
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_24h",
+            "importance": 4.619234101155694
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_ridge_regression_h6.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_h6.json",
+          "importance_plot": "artifacts/shap_importance_ridge_regression_h6.png"
+        }
+      },
+      "12": {
+        "model_name": "ridge_regression_h12",
+        "analysis_timestamp": "2025-11-17T13:19:37.590645",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "pm_combined",
+            "importance": 13.206550945213815
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 11.16376485678233
+          },
+          {
+            "feature": "wind_speed_10m_rolling_mean_12h",
+            "importance": 7.199403972849113
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_12h",
+            "importance": 6.942383915818692
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 6.411368873733011
+          },
+          {
+            "feature": "pm10",
+            "importance": 6.393557489712678
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 5.496567468431469
+          },
+          {
+            "feature": "relative_humidity_2m_rolling_mean_12h",
+            "importance": 5.311074073693361
+          },
+          {
+            "feature": "pm2_5_rolling_mean_48h",
+            "importance": 4.795544369135784
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_24h",
+            "importance": 4.619234101155694
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_ridge_regression_h12.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_h12.json",
+          "importance_plot": "artifacts/shap_importance_ridge_regression_h12.png"
+        }
+      },
+      "24": {
+        "model_name": "ridge_regression_h24",
+        "analysis_timestamp": "2025-11-17T13:19:38.605931",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "pm_combined",
+            "importance": 13.206550945213815
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 11.16376485678233
+          },
+          {
+            "feature": "wind_speed_10m_rolling_mean_12h",
+            "importance": 7.199403972849113
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_12h",
+            "importance": 6.942383915818692
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 6.411368873733011
+          },
+          {
+            "feature": "pm10",
+            "importance": 6.393557489712678
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 5.496567468431469
+          },
+          {
+            "feature": "relative_humidity_2m_rolling_mean_12h",
+            "importance": 5.311074073693361
+          },
+          {
+            "feature": "pm2_5_rolling_mean_48h",
+            "importance": 4.795544369135784
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_24h",
+            "importance": 4.619234101155694
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_ridge_regression_h24.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_h24.json",
+          "importance_plot": "artifacts/shap_importance_ridge_regression_h24.png"
+        }
+      },
+      "48": {
+        "model_name": "ridge_regression_h48",
+        "analysis_timestamp": "2025-11-17T13:19:39.685045",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "pm_combined",
+            "importance": 13.206550945213815
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 11.16376485678233
+          },
+          {
+            "feature": "wind_speed_10m_rolling_mean_12h",
+            "importance": 7.199403972849113
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_12h",
+            "importance": 6.942383915818692
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 6.411368873733011
+          },
+          {
+            "feature": "pm10",
+            "importance": 6.393557489712678
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 5.496567468431469
+          },
+          {
+            "feature": "relative_humidity_2m_rolling_mean_12h",
+            "importance": 5.311074073693361
+          },
+          {
+            "feature": "pm2_5_rolling_mean_48h",
+            "importance": 4.795544369135784
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_24h",
+            "importance": 4.619234101155694
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_ridge_regression_h48.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_h48.json",
+          "importance_plot": "artifacts/shap_importance_ridge_regression_h48.png"
+        }
+      },
+      "72": {
+        "model_name": "ridge_regression_h72",
+        "analysis_timestamp": "2025-11-17T13:19:40.749201",
+        "test_samples_analyzed": 100,
+        "total_features": 107,
+        "top_features": [
+          {
+            "feature": "pm_combined",
+            "importance": 13.206550945213815
+          },
+          {
+            "feature": "pm2_5",
+            "importance": 11.16376485678233
+          },
+          {
+            "feature": "wind_speed_10m_rolling_mean_12h",
+            "importance": 7.199403972849113
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_12h",
+            "importance": 6.942383915818692
+          },
+          {
+            "feature": "pm2_5_rolling_mean_12h",
+            "importance": 6.411368873733011
+          },
+          {
+            "feature": "pm10",
+            "importance": 6.393557489712678
+          },
+          {
+            "feature": "pm10_rolling_mean_12h",
+            "importance": 5.496567468431469
+          },
+          {
+            "feature": "relative_humidity_2m_rolling_mean_12h",
+            "importance": 5.311074073693361
+          },
+          {
+            "feature": "pm2_5_rolling_mean_48h",
+            "importance": 4.795544369135784
+          },
+          {
+            "feature": "pressure_msl_rolling_mean_24h",
+            "importance": 4.619234101155694
+          }
+        ],
+        "artifacts": {
+          "top_features_json": "artifacts/shap_top_features_ridge_regression_h72.json",
+          "feature_importance_json": "artifacts/shap_feature_importance_ridge_regression_h72.json",
+          "importance_plot": "artifacts/shap_importance_ridge_regression_h72.png"
+        }
       }
     }
   }
