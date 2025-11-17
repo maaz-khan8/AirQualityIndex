@@ -776,27 +776,51 @@ def main():
         tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["1h", "6h", "12h", "24h", "48h", "72h"])
         
         with tab1:
-            st.metric("1-Hour Ahead", f"{multi_horizon_predictions[1]['random_forest']:.1f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Random Forest", f"{multi_horizon_predictions[1]['random_forest']:.1f}")
+            with col2:
+                st.metric("Ridge Regression", f"{multi_horizon_predictions[1]['ridge_regression']:.1f}")
             st.info("Short-term prediction for immediate planning")
         
         with tab2:
-            st.metric("6-Hour Ahead", f"{multi_horizon_predictions[6]['random_forest']:.1f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Random Forest", f"{multi_horizon_predictions[6]['random_forest']:.1f}")
+            with col2:
+                st.metric("Ridge Regression", f"{multi_horizon_predictions[6]['ridge_regression']:.1f}")
             st.info("Current system prediction (baseline)")
         
         with tab3:
-            st.metric("12-Hour Ahead", f"{multi_horizon_predictions[12]['random_forest']:.1f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Random Forest", f"{multi_horizon_predictions[12]['random_forest']:.1f}")
+            with col2:
+                st.metric("Ridge Regression", f"{multi_horizon_predictions[12]['ridge_regression']:.1f}")
             st.info("Half-day planning prediction")
         
         with tab4:
-            st.metric("24-Hour Ahead", f"{multi_horizon_predictions[24]['random_forest']:.1f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Random Forest", f"{multi_horizon_predictions[24]['random_forest']:.1f}")
+            with col2:
+                st.metric("Ridge Regression", f"{multi_horizon_predictions[24]['ridge_regression']:.1f}")
             st.info("Daily planning prediction")
         
         with tab5:
-            st.metric("48-Hour Ahead", f"{multi_horizon_predictions[48]['random_forest']:.1f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Random Forest", f"{multi_horizon_predictions[48]['random_forest']:.1f}")
+            with col2:
+                st.metric("Ridge Regression", f"{multi_horizon_predictions[48]['ridge_regression']:.1f}")
             st.info("2-day planning prediction")
         
         with tab6:
-            st.metric("72-Hour Ahead", f"{multi_horizon_predictions[72]['random_forest']:.1f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Random Forest", f"{multi_horizon_predictions[72]['random_forest']:.1f}")
+            with col2:
+                st.metric("Ridge Regression", f"{multi_horizon_predictions[72]['ridge_regression']:.1f}")
             st.info("3-day planning prediction")
         
         # Model comparison chart

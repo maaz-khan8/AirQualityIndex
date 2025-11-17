@@ -1,8 +1,3 @@
-"""
-Model Interpretability using SHAP (SHapley Additive exPlanations)
-Provides explanations for model predictions and feature importance
-"""
-
 import pandas as pd
 import numpy as np
 import logging
@@ -13,7 +8,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 
-# SHAP imports
 try:
     import shap
     SHAP_AVAILABLE = True
@@ -94,6 +88,7 @@ class SHAPAnalyzer:
             }).sort_values('importance', ascending=False)
             
             # Get top features
+
             top_features = feature_importance_df.head(10)
             
             # Save artifacts

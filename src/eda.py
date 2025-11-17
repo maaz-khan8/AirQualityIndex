@@ -1,8 +1,3 @@
-"""
-Exploratory Data Analysis (EDA) Snapshot Module
-Generates lightweight EDA reports with distributions, seasonality, and correlations
-"""
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -550,4 +545,4 @@ if __name__ == "__main__":
     print(f"EDA report status: {report['status']}")
     print(f"Visualizations generated: {list(report.get('artifacts', {}).keys())}")
     
-    print("✅ EDA snapshot test completed!")
+    print("EDA snapshot test completed!")
